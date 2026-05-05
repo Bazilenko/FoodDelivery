@@ -28,7 +28,7 @@ namespace Catalog.Dal.Repositories
     public async Task<IEnumerable<Address>> GetAddressesByRestaurantIdAsync(int restaurantId)
         {
             return await _dbContext.Addresses
-                .Where(a => a.Id == restaurantId) 
+                .Where(a => a.RestaurantId == restaurantId) 
                 .ToListAsync();
         }
     }
