@@ -9,6 +9,8 @@ namespace Catalog.Dal.Entities
     public class Category : BaseEntity
     {
         public string Name { get; set; }
-        public ICollection<Dish> Dishes { get; set; } = null!;
+        public int RestaurantId {get; set; }
+        public ICollection<Dish> Dishes { get; set; } = [];
+        public Restaurant Restaurant {get; set;} = null!;
     }
 }

@@ -8,10 +8,11 @@ namespace Catalog.Dal.Entities
 {
     public class DishOption : BaseEntity
     {
-        public string Name { get; set; }
-        public decimal ModifierPrice { get; set; }
-        public int DishId { get; set; }
+        public int ModifierGroupId {get; set;}
+        public string Name { get; set; } = null!;
+        public decimal Price { get; set; }
+        public bool IsAvailable { get; set; }
 
-        public Dish Dish { get; set; } = null!;
+        public ModifierGroup ModifierGroup {get; set;} = null!;
     }
 }

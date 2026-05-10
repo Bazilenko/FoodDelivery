@@ -13,6 +13,8 @@ namespace Catalog.Dal.Entities
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
         public string? PostalCode { get; set; }
+        public decimal Latitude {get; set;}
+        public decimal Longitude {get; set;}
         public Restaurant Restaurant { get; set; } = null!;
     }
 }
