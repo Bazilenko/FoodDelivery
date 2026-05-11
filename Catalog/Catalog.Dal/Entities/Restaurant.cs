@@ -17,7 +17,7 @@ namespace Catalog.Dal.Entities
         public ICollection<Address> Addresses { get; set; } = [];
         public ICollection<Contact> Contacts { get; set; } = [];
         public ICollection<Dish> Dishes { get; set; } = [];
-        public ICollection<WorkingHours> WorkingHours {get; set;} = [];
+        public ICollection<WorkingHour> WorkingHours {get; set;} = [];
         public ICollection<Category> Categories {get;set;} = [];
         public ICollection<RestaurantCuisine> RestaurantCuisines {get; set;} = [];
 

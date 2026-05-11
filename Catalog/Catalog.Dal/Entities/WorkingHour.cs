@@ -1,6 +1,6 @@
 namespace Catalog.Dal.Entities
 {
-    public class WorkingHours : BaseEntity
+    public class WorkingHour : BaseEntity
     {
         public int RestaurantId {get; set;}
         public int DayOfWeek {get; set;}
