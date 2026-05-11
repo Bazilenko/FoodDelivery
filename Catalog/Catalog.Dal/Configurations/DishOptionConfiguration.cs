@@ -17,15 +17,17 @@ namespace Catalog.Dal.Configurations
 
             builder.Property(d => d.Name)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(100);
 
-            builder.Property(d => d.ModifierPrice)
+            builder.Property(d => d.Price)
                 .IsRequired()
-                .HasPrecision(10,2);
+                .HasColumnType("decimal(10,2)");
 
-            builder.HasOne(d => d.Dish)
-                .WithMany(d => d.DishOptions)
-                .HasForeignKey(d => d.DishId)
+            builder.HasQueryFilter(o => !o.IsDeleted);
+
+            builder.HasOne(d => d.ModifierGroup)
+                .WithMany(m => m.DishOptions)
+                .HasForeignKey(d => d.ModifierGroupId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

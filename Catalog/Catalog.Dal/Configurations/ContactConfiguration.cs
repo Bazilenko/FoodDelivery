@@ -17,17 +17,20 @@ namespace Catalog.Dal.Configurations
             builder.HasKey(c => c.Id);
 
             builder.Property(c => c.Type)
+                .HasConversion<string>()
                 .IsRequired()
                 .HasMaxLength(50);
 
             builder.Property(c => c.Value)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(300);
 
             builder.HasOne(c => c.Restaurant)
                 .WithMany(r => r.Contacts)
                 .HasForeignKey(c => c.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
+            
+            builder.HasQueryFilter(c => !c.IsDeleted);
         }
     }
 }

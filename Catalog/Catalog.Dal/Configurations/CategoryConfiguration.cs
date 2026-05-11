@@ -19,6 +19,16 @@ namespace Catalog.Dal.Configurations
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.HasIndex(c => new {c.Name, c.RestaurantId})
+                .IsUnique();
+
+            builder.HasOne(c => c.Restaurant)
+                .WithMany(r => r.Categories)
+                .HasForeignKey(c => c.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            builder.HasQueryFilter(c => !c.IsDeleted);
+
             builder.HasMany(c => c.Dishes)
                 .WithOne(d => d.Category)
                 .HasForeignKey(d => d.CategoryId)

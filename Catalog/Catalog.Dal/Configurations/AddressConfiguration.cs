@@ -15,20 +15,32 @@ namespace Catalog.Dal.Configurations
         {
             builder.HasKey(a => a.Id);
 
+
             builder.Property(a => a.Street)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(200);
 
             builder.Property(a => a.City)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(100);
 
             builder.Property(a => a.BuildingNumber)
-                .HasMaxLength(10)
+                .HasMaxLength(20)
                 .IsRequired();
 
             builder.Property(a => a.PostalCode)
-                .HasMaxLength(6);
+                .IsRequired(false)
+                .HasMaxLength(20);
+
+            builder.Property(a => a.Latitude)
+                .IsRequired()
+                .HasColumnType("decimal(9,6)");
+            
+            builder.Property(a => a.Longitude)
+                .IsRequired()
+                .HasColumnType("decimal(9,6)");
+
+            builder.HasQueryFilter(a => !a.IsDeleted);
 
             builder.HasOne(a => a.Restaurant)
                 .WithMany(r => r.Addresses)
