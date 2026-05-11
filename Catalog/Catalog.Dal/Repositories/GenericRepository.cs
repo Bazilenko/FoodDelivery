@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq.Expressions;
 using Catalog.Dal.Context;
 using Catalog.Dal.Entities;
 using Catalog.Dal.Repositories.Interfaces;
@@ -23,64 +20,66 @@ namespace Catalog.Dal.Repositories
         
         public async Task<T> AddAsync(T entity, CancellationToken ct = default)
         {
-            await _dbSet.AddAsync(entity);
-            await _dbContext.SaveChangesAsync();
+            await _dbSet.AddAsync(entity, ct);
             return entity;
         }
 
         public async Task DeleteAsync(T entity, CancellationToken ct = default)
         {
             _dbSet.Remove(entity);
-            _dbContext.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        public async Task<IEnumerable<T>> GetAllAsync(CancellationToken ct = default)
         {
-            return await _dbSet.ToListAsync();
+            return await _dbSet.ToListAsync(ct);
         }
 
-        public async Task<T> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<T?> GetByIdAsync(int id, CancellationToken ct = default)
         {
-            return await _dbSet.FindAsync(id);
-            
+            return await _dbSet.FindAsync(id, ct);
         }
 
         public async Task UpdateAsync(T entity, CancellationToken ct = default)
         {
             _dbSet.Update(entity);
-            await _dbContext.SaveChangesAsync();
         }
 
         public async Task<T?> GetEntityWithSpecification(ISpecification<T> specification)
         {
-            var query = SpecificationEvaluator<T>.GetQuery(_dbSet, specification);
-            return await query.FirstOrDefaultAsync();
+            return await SpecificationEvaluator<T>
+                .GetQuery(_dbSet, specification)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<T>> ListAsync(ISpecification<T> specification)
         {
-            var query = SpecificationEvaluator<T>.GetQuery(_dbSet, specification);
-            return await query.ToListAsync();
+            return await SpecificationEvaluator<T>
+                .GetQuery(_dbSet, specification)
+                .ToListAsync();
         }
 
         public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default)
         {
-            await _dbSet.AddRangeAsync(entities);
+            await _dbSet.AddRangeAsync(entities, ct);   
         }
 
-        public async Task<(IEnumerable<T> Items, int TotalCount)> GetPagedDataAsync(
-            int pageNumber, int pageSize, string sortColumn, string sortOrder)
+        public async Task<(IEnumerable<T> Items, int TotalCount)> GetPagedAsync<TKey>(
+            int pageNumber, 
+            int pageSize, 
+            Expression<Func<T, TKey>> orderBy,
+            bool descending = false,
+            CancellationToken ct = default)
         {
-            var query = _dbSet.AsQueryable();
+            var query = descending
+                ? _dbSet.OrderByDescending(orderBy)
+                : _dbSet.OrderBy(orderBy);
 
-            query = query.OrderBy($"{sortColumn} {sortOrder}");
-
-            var totalCount = await query.CountAsync();
+            var totalCount = await query.CountAsync(ct);
 
             var items = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
-                .ToListAsync();
+                .ToListAsync(ct);
 
             return (items, totalCount);
         }

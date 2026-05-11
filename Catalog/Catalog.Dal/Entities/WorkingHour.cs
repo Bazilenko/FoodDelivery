@@ -4,8 +4,8 @@ namespace Catalog.Dal.Entities
     {
         public int RestaurantId {get; set;}
         public int DayOfWeek {get; set;}
-        public DateTime OpeningTime {get; set;}
-        public DateTime ClosingTime {get; set;}
+        public TimeSpan OpeningTime {get; set;}
+        public TimeSpan ClosingTime {get; set;}
         public bool IsClosed {get; set;}
 
         public Restaurant Restaurant {get; set;} = null!;

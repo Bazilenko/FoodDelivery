@@ -1,58 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Catalog.Dal.Context;
+﻿using Catalog.Dal.Context;
 using Catalog.Dal.Entities;
 using Catalog.Dal.Repositories.Interfaces;
-using Catalog.Dal.Specifications;
 using Microsoft.EntityFrameworkCore;
 
 namespace Catalog.Dal.Repositories
 {
     public class RestaurantRepository : GenericRepository<Restaurant>, IRestaurantRepository
 {
-    private readonly MyDbContext _dbContext;
 
-    public RestaurantRepository(MyDbContext dbContext) : base(dbContext)
-    {
-        _dbContext = dbContext;
-    }
-    public async Task<IEnumerable<Restaurant>> GetActiveAsync()
-{
-    return await _dbSet
-        .Where(r => r.IsActive)
-        .ToListAsync();
-}
-
-    public async Task<Restaurant?> GetByIdWithFullInfo(int id)
+    public RestaurantRepository(MyDbContext dbContext) : base(dbContext){}
+  
+    public async Task<Restaurant?> GetWithFullDetailsAsync(int id, CancellationToken ct = default)
     {
         return await _dbSet
             .Include(r => r.Addresses)
             .Include(r => r.Contacts)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .Include(r => r.WorkingHours)
+            .Include(r => r.Categories)
+            .Include(r => r.RestaurantCuisines)
+                .ThenInclude(rc => rc.Cuisine)
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
     }
-
-    public async Task<IEnumerable<Restaurant>> GetByRatingAsync(decimal minRating)
-    {
-        return await _dbSet
-            .Where(r => r.Rating >= minRating)
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<Restaurant>> SearchByNameAsync(string name)
-    {
-        return await _dbSet
-            .Where(r => r.Name.Contains(name))
-            .ToListAsync();
-    }
-
-    public async Task<IEnumerable<Restaurant>> GetByCityAsync(string city)
+ 
+   public async Task<IEnumerable<Restaurant>> GetByCityAsync(string city, CancellationToken ct = default)
     {
         return await _dbSet
             .Where(r => r.Addresses.Any(a => a.City == city))
-            .ToListAsync();
+            .Include(r => r.Addresses)
+            .ToListAsync(ct);
+    }
+    public async Task<IEnumerable<Restaurant>> GetByCuisineAsync(int cuisineId, CancellationToken ct = default)
+    {
+        return await _dbSet
+            .Where(r => r.RestaurantCuisines.Any(rc => rc.CuisineId == cuisineId))
+            .Include(r => r.Addresses)
+            .ToListAsync(ct);
     }
 }
 }

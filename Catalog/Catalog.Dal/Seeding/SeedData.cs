@@ -1,90 +1,118 @@
 ﻿using Bogus;
-using Catalog.Dal.Context;
 using Catalog.Dal.Entities;
+using Catalog.Dal.Enums;
 using Catalog.Dal.UOW.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 public static class SeedData
 {
-    public static async Task SeedAsync(IUnitOfWork _unitOfWork)
+    public static async Task SeedAsync(IUnitOfWork uow)
     {
-         
+        var existingRestaurants = await uow.Restaurants.GetAllAsync();
+        if (existingRestaurants.Any()) return;
 
-        var random = new Random();
+        var faker = new Faker();
 
-       
-        var categoryFaker = new Faker<Category>()
-            .RuleFor(c => c.Name, f => f.Commerce.Categories(1).First());
+        var cuisineFaker = new Faker<Cuisine>()
+            .RuleFor(c => c.Name, f => f.Address.Country() + " Cuisine")
+            .RuleFor(c => c.ImageUrl, f => f.Image.PicsumUrl());
 
-        var categories = categoryFaker.Generate(8);
+        var cuisines = cuisineFaker.Generate(5);
+        await uow.Cuisines.AddRangeAsync(cuisines);
+        await uow.SaveChangesAsync();
 
-        await _unitOfWork.Categories.AddRangeAsync(categories);
-        await _unitOfWork.SaveChangesAsync();
-
-       
         var restaurantFaker = new Faker<Restaurant>()
             .RuleFor(r => r.Name, f => f.Company.CompanyName())
-            .RuleFor(r => r.Description, f => f.Lorem.Sentence(20))
+            .RuleFor(r => r.Description, f => f.Lorem.Sentence(10))
             .RuleFor(r => r.ImageUrl, f => f.Image.PicsumUrl())
-            .RuleFor(r => r.Rating, f => f.Random.Decimal(3.5m, 5m));
+            .RuleFor(r => r.Rating, f => f.Random.Decimal(3.5m, 5m))
+            .RuleFor(r => r.DeliveryRadiusKm, f => f.Random.Decimal(1, 15))
+            .RuleFor(r => r.CreatedAt, f => DateTime.UtcNow);
 
         var restaurants = restaurantFaker.Generate(5);
-        await _unitOfWork.Restaurants.AddRangeAsync(restaurants);
-        await _unitOfWork.SaveChangesAsync();
+        await uow.Restaurants.AddRangeAsync(restaurants);
+        await uow.SaveChangesAsync(); 
 
+        foreach (var rest in restaurants)
+        {
+            var address = new Address
+            {
+                City = faker.Address.City(),
+                Street = faker.Address.StreetName(),
+                BuildingNumber = faker.Address.BuildingNumber(),
+                Latitude = (decimal)faker.Address.Latitude(),
+                Longitude = (decimal)faker.Address.Longitude(),
+                RestaurantId = rest.Id
+            };
+            await uow.Addresses.AddAsync(address);
 
-        var addressFaker = new Faker<Address>()
-            .RuleFor(a => a.City, f => f.Address.City())
-            .RuleFor(a => a.Street, f => f.Address.StreetName())
-            .RuleFor(a => a.BuildingNumber, f => f.Address.BuildingNumber())
-            .RuleFor(a => a.PostalCode, f => f.Address.ZipCode("#####"))
-            .RuleFor(a => a.RestaurantId, f => f.PickRandom(restaurants).Id);
+            var contactFaker = new Faker<Contact>()
+                .RuleFor(c => c.Type, f => f.PickRandom<ContactType>())
+                .RuleFor(c => c.Value, (f, c) => c.Type == ContactType.Phone ? f.Phone.PhoneNumber() : f.Internet.Email())
+                .RuleFor(c => c.RestaurantId, rest.Id);
+            
+            await uow.Contacts.AddRangeAsync(contactFaker.Generate(2));
 
-        var addresses = addressFaker.Generate(10);
-        await _unitOfWork.Addresses.AddRangeAsync(addresses);
-
-      
-        var contactTypes = new[] { "Phone", "Email", "Instagram", "Facebook" };
-
-        var contactFaker = new Faker<Contact>()
-            .RuleFor(c => c.Type, f => f.PickRandom(contactTypes))
-            .RuleFor(c => c.Value, (f, c) =>
-                c.Type switch
+            for (int i = 0; i < 7; i++)
+            {
+                await uow.WorkingHours.AddAsync(new WorkingHour
                 {
-                    "Phone" => f.Phone.PhoneNumber(),
-                    "Email" => f.Internet.Email(),
-                    "Instagram" => "@" + f.Internet.UserName(),
-                    "Facebook" => "fb.com/" + f.Internet.UserName(),
-                    _ => ""
-                })
-            .RuleFor(c => c.RestaurantId, f => f.PickRandom(restaurants).Id);
+                    DayOfWeek = i,
+                    OpeningTime = new TimeSpan(9, 0, 0),
+                    ClosingTime = new TimeSpan(22, 0, 0),
+                    RestaurantId = rest.Id
+                });
+            }
 
-        var contacts = contactFaker.Generate(20);
-        await _unitOfWork.Contacts.AddRangeAsync(contacts);
+            var categoryFaker = new Faker<Category>()
+                .RuleFor(c => c.Name, f => f.PickRandom("Burgers", "Pizza", "Salads", "Drinks", "Desserts"))
+                .RuleFor(c => c.RestaurantId, rest.Id);
 
-        await _unitOfWork.SaveChangesAsync();
+            var categories = categoryFaker.Generate(3);
+            await uow.Categories.AddRangeAsync(categories);
+            await uow.SaveChangesAsync(); 
 
-        
-        var dishFaker = new Faker<Dish>()
-            .RuleFor(d => d.Name, f => f.Commerce.ProductName())
-            .RuleFor(d => d.Description, f => f.Lorem.Sentence())
-            .RuleFor(d => d.Price, f => f.Random.Decimal(5m, 40m))
-            .RuleFor(d => d.ImageUrl, f => f.Image.PicsumUrl())
-            .RuleFor(d => d.CategoryId, f => f.PickRandom(categories).Id)
-            .RuleFor(d => d.RestaurantId, f => f.PickRandom(restaurants).Id);
+            foreach (var cat in categories)
+            {
+                var dishFaker = new Faker<Dish>()
+                    .RuleFor(d => d.Name, f => f.Commerce.ProductName())
+                    .RuleFor(d => d.Price, f => f.Random.Decimal(100, 500))
+                    .RuleFor(d => d.CategoryId, cat.Id)
+                    .RuleFor(d => d.RestaurantId, rest.Id)
+                    .RuleFor(d => d.IsAvailable, true);
 
-        var dishes = dishFaker.Generate(40);
-        await _unitOfWork.Dishes.AddRangeAsync(dishes);
-        await _unitOfWork.SaveChangesAsync();
+                var dishes = dishFaker.Generate(4);
+                await uow.Dishes.AddRangeAsync(dishes);
+                await uow.SaveChangesAsync();
 
-        
-        var optionFaker = new Faker<DishOption>()
-            .RuleFor(o => o.Name, f => f.Commerce.ProductMaterial())
-            .RuleFor(o => o.ModifierPrice, f => f.Random.Decimal(0.5m, 10m))
-            .RuleFor(o => o.DishId, f => f.PickRandom(dishes).Id);
+                foreach (var dish in dishes)
+                {
+                    var modGroup = new ModifierGroup
+                    {
+                        Name = "Extra toppings",
+                        MinSelect = 0,
+                        MaxSelect = 3,
+                        DishId = dish.Id
+                    };
+                    await uow.ModifierGroups.AddAsync(modGroup);
+                    await uow.SaveChangesAsync();
 
-        var options = optionFaker.Generate(100);
-        await _unitOfWork.DishOptions.AddRangeAsync(options);
-        await _unitOfWork.SaveChangesAsync();
+                    var optionFaker = new Faker<DishOption>()
+                        .RuleFor(o => o.Name, f => f.Commerce.ProductMaterial())
+                        .RuleFor(o => o.Price, f => f.Random.Decimal(10, 50))
+                        .RuleFor(o => o.ModifierGroupId, modGroup.Id);
+
+                    await uow.DishOptions.AddRangeAsync(optionFaker.Generate(3));
+                }
+            }
+
+            var restaurantCuisine = new RestaurantCuisine
+            {
+                RestaurantId = rest.Id,
+                CuisineId = faker.PickRandom(cuisines).Id
+            };
+            await uow.RestaurantCuisines.AddAsync(restaurantCuisine);
+        }
+
+        await uow.SaveChangesAsync();
     }
 }
