@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Catalog.Bll.DTOs.ModifierGroup;
 
 namespace Catalog.Bll.DTOs.Dish
 {
-    public class DishCreateDto
-    {
-        public int RestaurantId { get; set; }
-        public int CategoryId { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public decimal Price { get; set; }
-        public string ImageUrl { get; set; }
-    }
+    public record DishCreateDto(
+        int CategoryId,
+        string Name,
+        string? Description,
+        decimal Price,
+        decimal? Weight,
+        string? Unit,
+        decimal? Calories,
+        string? ImageUrl,
+        bool IsAvailable = true,
+        IEnumerable<ModifierGroupCreateDto>? ModifierGroups = null);
 }
