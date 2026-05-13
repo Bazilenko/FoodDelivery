@@ -1,6 +1,6 @@
-namespace Catalog.Bll.DTOs.Contact
+namespace Catalog.Bll.DTOs.WorkingHour
 {
-    public record WorkingHoursDto(
+    public record WorkingHourDto(
         int Id,
         int DayOfWeek,
         TimeOnly OpeningTime,
