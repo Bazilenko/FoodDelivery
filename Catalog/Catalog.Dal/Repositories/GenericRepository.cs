@@ -13,11 +13,12 @@ namespace Catalog.Dal.Repositories
     {
         private readonly MyDbContext _dbContext;
         protected readonly DbSet<T> _dbSet;
-        public GenericRepository(MyDbContext dbContext) {
+        public GenericRepository(MyDbContext dbContext)
+        {
             _dbContext = dbContext;
             _dbSet = dbContext.Set<T>();
         }
-        
+
         public async Task<T> AddAsync(T entity, CancellationToken ct = default)
         {
             await _dbSet.AddAsync(entity, ct);
@@ -60,12 +61,12 @@ namespace Catalog.Dal.Repositories
 
         public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default)
         {
-            await _dbSet.AddRangeAsync(entities, ct);   
+            await _dbSet.AddRangeAsync(entities, ct);
         }
 
         public async Task<(IEnumerable<T> Items, int TotalCount)> GetPagedAsync<TKey>(
-            int pageNumber, 
-            int pageSize, 
+            int pageNumber,
+            int pageSize,
             Expression<Func<T, TKey>> orderBy,
             bool descending = false,
             CancellationToken ct = default)
@@ -82,6 +83,11 @@ namespace Catalog.Dal.Repositories
                 .ToListAsync(ct);
 
             return (items, totalCount);
+        }
+
+        public void MarkDeleted(T entity)
+        {
+            _dbSet.Remove(entity);
         }
     }
 }

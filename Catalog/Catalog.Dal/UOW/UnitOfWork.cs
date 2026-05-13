@@ -50,9 +50,6 @@ namespace Catalog.Dal.UOW
             await _dbContext.DisposeAsync();
         }
 
-        public async Task SaveChangesAsync(CancellationToken ct = default)
-        {
-            await _dbContext.SaveChangesAsync(ct);
-        }
+        public Task<int> SaveChangesAsync(CancellationToken ct = default) => _dbContext.SaveChangesAsync(ct);
     }
 }

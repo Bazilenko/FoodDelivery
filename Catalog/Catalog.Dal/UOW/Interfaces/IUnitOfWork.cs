@@ -21,7 +21,7 @@ namespace Catalog.Dal.UOW.Interfaces
         IRestaurantCuisineRepository RestaurantCuisines {get;}
         IWorkingHourRepository WorkingHours {get;}
 
-        Task SaveChangesAsync(CancellationToken ct = default);
+        Task<int> SaveChangesAsync(CancellationToken ct = default);
         void Dispose();
         ValueTask DisposeAsync();
 

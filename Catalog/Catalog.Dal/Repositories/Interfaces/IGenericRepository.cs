@@ -15,12 +15,20 @@ namespace Catalog.Dal.Repositories.Interfaces
         Task AddRangeAsync(IEnumerable<T> entities, CancellationToken ct = default);
         Task<IEnumerable<T>> ListAsync(ISpecification<T> specification);
        
-            Task<(IEnumerable<T> Items, int TotalCount)> GetPagedAsync<TKey>(
+        Task<(IEnumerable<T> Items, int TotalCount)> GetPagedAsync<TKey>(
                 int pageNumber,
                 int pageSize,
                 Expression<Func<T, TKey>> orderBy,
                 bool descending = false,
                 CancellationToken ct = default);
-        }
+
+        /// <summary>
+        /// Marks the entity as Deleted in the change tracker without calling SaveChanges.
+        /// Use when you want to batch multiple deletes into one SaveChanges round-trip.
+        /// </summary>
+        void MarkDeleted(T entity);
+    }
+
+        
     
 }
