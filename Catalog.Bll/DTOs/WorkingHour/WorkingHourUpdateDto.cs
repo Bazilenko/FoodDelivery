@@ -1,6 +1,6 @@
 namespace Catalog.Bll.DTOs.WorkingHour
 {
-    public record WorkingHoursUpdateDto(
+    public record WorkingHourUpdateDto(
         int Id,
         TimeOnly OpeningTime,
         TimeOnly ClosingTime,

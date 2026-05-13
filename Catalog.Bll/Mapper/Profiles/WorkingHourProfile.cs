@@ -24,7 +24,7 @@ namespace Catalog.Bll.Mapper.Profiles
                 .ForMember(dest => dest.Restaurant, opt => opt.Ignore());
 
             
-            CreateMap<WorkingHoursUpdateDto, WorkingHour>()
+            CreateMap<WorkingHourUpdateDto, WorkingHour>()
                 .IgnoreAuditProperties()
                 .ForMember(dest => dest.OpeningTime,
                     opt => opt.MapFrom(src => src.OpeningTime.ToTimeSpan()))

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
+﻿using AutoMapper;
 using Catalog.Bll.DTOs.Address;
 using Catalog.Bll.Services.Interfaces;
 using Catalog.Dal.Entities;
@@ -13,40 +8,64 @@ namespace Catalog.Bll.Services
 {
     public class AddressService : IAddressService
     {
-        private IUnitOfWork _unitOfWork;
-        private IMapper _mapper;
+        private readonly IUnitOfWork _uow;
+        private readonly IMapper _mapper;
+        private readonly IRestaurantContext _restaurantContext;
 
-        public AddressService(IUnitOfWork unitOfWork, IMapper mapper)
+        public AddressService(IUnitOfWork uow, IMapper mapper, IRestaurantContext restaurantContext)
         {
-            _unitOfWork = unitOfWork;
+            _uow = uow;
             _mapper = mapper;
+            _restaurantContext = restaurantContext;
         }
 
-        public async Task<AddressDto> Create(AddressCreateDto dto)
+        public async Task<IEnumerable<AddressDto>> GetAllAsync(CancellationToken ct = default)
+        {
+            var addresses = await _uow.Addresses.GetByRestaurantAsync(_restaurantContext.RestaurantId, ct);
+            return _mapper.Map<IEnumerable<AddressDto>>(addresses);
+        }
+
+        public async Task<AddressDto> GetByIdAsync(int id, CancellationToken ct = default)
+            => _mapper.Map<AddressDto>(await GetOwnedAsync(id, ct));
+
+        public async Task<AddressDto> CreateAsync(AddressCreateDto dto, CancellationToken ct = default)
         {
             var entity = _mapper.Map<Address>(dto);
-            await _unitOfWork.Addresses.AddAsync(entity);
-            await _unitOfWork.SaveChangesAsync();
+            entity.RestaurantId = _restaurantContext.RestaurantId;
+
+            await _uow.Addresses.AddAsync(entity, ct);
+            await _uow.SaveChangesAsync(ct);
             return _mapper.Map<AddressDto>(entity);
         }
 
-        public async Task<IEnumerable<AddressDto>> GetAll()
+        public async Task<AddressDto> UpdateAsync(AddressUpdateDto dto, CancellationToken ct = default)
         {
-            var categories = await _unitOfWork.Addresses.GetAllAsync();
-            return _mapper.Map<IEnumerable<AddressDto>>(categories);
-        }
+            var entity = await GetOwnedAsync(dto.Id, ct);
 
-        public async Task<AddressDto> GetById(int id)
-        {
-            var entity = await _unitOfWork.Addresses.GetByIdAsync(id);
+            _mapper.Map(dto, entity);
+
+            await _uow.Addresses.UpdateAsync(entity, ct);
+            await _uow.SaveChangesAsync(ct);
             return _mapper.Map<AddressDto>(entity);
         }
 
-        public async Task Update(AddressUpdateDto dto)
+        public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
-            var entity = _mapper.Map<Address>(dto);
-            await _unitOfWork.Addresses.UpdateAsync(entity);
-            await _unitOfWork.SaveChangesAsync();
+            var entity = await GetOwnedAsync(id, ct);
+            entity.IsDeleted = true;
+            await _uow.Addresses.UpdateAsync(entity, ct);
+            await _uow.SaveChangesAsync(ct);
+        }
+
+        private async Task<Address> GetOwnedAsync(int id, CancellationToken ct)
+        {
+            var entity = await _uow.Addresses.GetByIdAsync(id, ct)
+                ?? throw new KeyNotFoundException($"Address {id} not found.");
+
+            if (entity.RestaurantId != _restaurantContext.RestaurantId)
+                throw new UnauthorizedAccessException("Address does not belong to your restaurant.");
+
+            return entity;
         }
     }
 }

@@ -8,6 +8,7 @@ namespace Catalog.Bll.DTOs.Restaurant
         string? ImageUrl,
         decimal Rating,
         decimal DeliveryRadiusKm,
+        bool IsOpen,
         IEnumerable<string> Cuisines,
         AddressDto? PrimaryAddress);
 }
