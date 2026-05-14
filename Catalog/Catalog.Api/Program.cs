@@ -1,5 +1,6 @@
 
 
+using Catalog.Api.Middleware;
 using Catalog.Bll.Mapper.Profiles;
 using Catalog.Bll.Services;
 using Catalog.Bll.Services.Interfaces;
@@ -18,22 +19,22 @@ builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("CatalogDb"))
     );
 
-
+builder.Services.AddScoped<IRestaurantContext,  FakeRestaurantContext>();
 
 // Add services to the container.
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<IDishRepository, DishRepository>();
-builder.Services.AddScoped<IRestaurantRepository, RestaurantRepository>();
-builder.Services.AddScoped<IContactRepository, ContactRepository>();
-builder.Services.AddScoped<IAddressRepository, AddressRepository>();
-builder.Services.AddScoped<IDishOptionRepository, DishOptionRepository>();
 
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IDishService,  DishService>();
-builder.Services.AddScoped<IRestaurantService, RestaurantService>();
+builder.Services.AddScoped<IDishOwnerService,  DishOwnerService>();
+builder.Services.AddScoped<IDishPublicService, DishPublicService>();
 builder.Services.AddScoped<IContactService, ContactService>();
+builder.Services.AddScoped<ICuisineService, CuisineService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<IDishOptionService,  DishOptionService>();
+builder.Services.AddScoped<IModifierGroupService,  ModifierGroupService>();
+builder.Services.AddScoped<IRestaurantOwnerService,  RestaurantOwnerService>();
+builder.Services.AddScoped<IRestaurantPublicService,  RestaurantPublicService>();
+builder.Services.AddScoped<IWorkingHourService,  WorkingHourService>();
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -49,6 +50,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 //migration for data base in container
 using (var scope = app.Services.CreateScope())
@@ -75,6 +78,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 
 app.UseAuthorization();
 

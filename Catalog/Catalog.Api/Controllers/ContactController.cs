@@ -1,49 +1,61 @@
 ﻿using Catalog.Bll.DTOs.Contact;
-using Catalog.Bll.DTOs.Dish;
-using Catalog.Bll.DTOs.Restaurant;
+using Microsoft.AspNetCore.Authorization;
 using Catalog.Bll.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class ContactController : ControllerBase
+    [Route("api/owner/contacts")]
+    [Authorize(Roles = "RestaurantOwner")]
+    [Produces("application/json")]
+    public class ContactsController : ControllerBase
     {
-        private IContactService _service;
+        private readonly IContactService _service;
 
-        public ContactController(IContactService service)
-        {
-            _service = service;
-        }
+        public ContactsController(IContactService service) => _service = service;
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ContactDto>>> GetAllDishes()
-        {
-            var entities = await _service.GetAll();
-            return Ok(entities);
-        }
+        [ProducesResponseType(typeof(IEnumerable<ContactDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<ContactDto>>> GetAll(CancellationToken ct)
+            => Ok(await _service.GetAllAsync(ct));
+
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ContactDto>> GetById(int id, CancellationToken ct)
+            => Ok(await _service.GetByIdAsync(id, ct));
 
         [HttpPost]
-        public async Task<ActionResult<ContactDto>> Create([FromBody] ContactCreateDto dto)
+        [ProducesResponseType(typeof(ContactDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<ContactDto>> Create(
+            [FromBody] ContactCreateDto dto, CancellationToken ct)
         {
-            var entity = await _service.Create(dto);
-            return Ok(entity);
+            var created = await _service.CreateAsync(dto, ct);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
-        [HttpPut]
-        public async Task<ActionResult> Update([FromBody] ContactUpdateDto dto)
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(typeof(ContactDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ContactDto>> Update(
+            int id, [FromBody] ContactUpdateDto dto, CancellationToken ct)
         {
-            await _service.Update(dto);
+            if (id != dto.Id)
+                return BadRequest("Route id does not match body id.");
+
+            return Ok(await _service.UpdateAsync(dto, ct));
+        }
+
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        {
+            await _service.DeleteAsync(id, ct);
             return NoContent();
         }
-
-        [HttpGet("by-id")]
-        public async Task<ActionResult<ContactDto>> GetById(int id)
-        {
-            var entity = await _service.GetById(id);
-            return Ok(entity);
-        }
-
     }
 }

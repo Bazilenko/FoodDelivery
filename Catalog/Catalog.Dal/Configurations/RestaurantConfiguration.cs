@@ -36,7 +36,7 @@ namespace Catalog.Dal.Configurations
             builder.HasQueryFilter(r => !r.IsDeleted);
 
             builder.HasMany(r => r.Dishes)
-                .WithOne(d => d.Restaturant)
+                .WithOne(d => d.Restaurant)
                 .HasForeignKey(d => d.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
 

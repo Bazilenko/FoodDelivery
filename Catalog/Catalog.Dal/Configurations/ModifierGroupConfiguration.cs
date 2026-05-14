@@ -30,7 +30,7 @@ namespace Catalog.Dal.Configurations
 
             builder.HasMany(m => m.DishOptions)
                 .WithOne(d => d.ModifierGroup)
-                .HasForeignKey(d => d.ModifierGroup)
+                .HasForeignKey(d => d.ModifierGroupId)
                 .OnDelete(DeleteBehavior.Cascade);
 
 

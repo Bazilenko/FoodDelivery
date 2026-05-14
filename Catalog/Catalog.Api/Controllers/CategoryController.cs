@@ -1,54 +1,61 @@
-﻿using System.Threading.Tasks;
-using Catalog.Bll.DTOs.Category;
-using Catalog.Bll.Services;
+﻿using Catalog.Bll.DTOs.Category;
 using Catalog.Bll.Services.Interfaces;
-using Catalog.Dal.Context;
-using Catalog.Dal.Entities;
-using Catalog.Dal.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
-    public class CategoryController : ControllerBase
+    [Route("api/owner/categories")]
+    [Authorize(Roles = "RestaurantOwner")]
+    [Produces("application/json")]
+    public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _service;
-        public CategoryController(ICategoryService service) {
-            _service = service;
-        }
+
+        public CategoriesController(ICategoryService service) => _service = service;
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll() {
-            var entities = await _service.GetAll();
-            return Ok(entities);
-        }
+        [ProducesResponseType(typeof(IEnumerable<CategoryDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll(CancellationToken ct)
+            => Ok(await _service.GetAllAsync(ct));
+
+        [HttpGet("{id:int}")]
+        [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<CategoryDto>> GetById(int id, CancellationToken ct)
+            => Ok(await _service.GetByIdAsync(id, ct));
 
         [HttpPost]
-        public async Task<ActionResult<CategoryDto>> Create([FromBody] CategoryCreateDto dto)
+        [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<CategoryDto>> Create(
+            [FromBody] CategoryCreateDto dto, CancellationToken ct)
         {
-            var entity = await _service.Create(dto);
-            return Ok(entity);
+            var created = await _service.CreateAsync(dto, ct);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
-        [HttpPut]
-        public async Task<ActionResult> Update([FromBody] CategoryUpdateDto dto)
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<CategoryDto>> Update(
+            int id, [FromBody] CategoryUpdateDto dto, CancellationToken ct)
         {
-            await _service.Update(dto);
+            if (id != dto.Id)
+                return BadRequest("Route id does not match body id.");
+
+            return Ok(await _service.UpdateAsync(dto, ct));
+        }
+
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        {
+            await _service.DeleteAsync(id, ct);
             return NoContent();
-        }
-
-        [HttpGet("by-id")]
-        public async Task<ActionResult<CategoryDto>> GetById(int id)
-        {
-            var entity = await _service.GetById(id);
-            return Ok(entity);
-        }
-
-        [HttpDelete]
-        public async Task<ActionResult> Delete(int id)
-        {
-            await _service.Delete(id);
-            return Ok();
         }
     }
 }

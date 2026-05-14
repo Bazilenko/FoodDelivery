@@ -47,7 +47,7 @@ namespace Catalog.Dal.Configurations
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne(d => d.Restaturant)
+            builder.HasOne(d => d.Restaurant)
                 .WithMany(r => r.Dishes)
                 .HasForeignKey(d => d.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
