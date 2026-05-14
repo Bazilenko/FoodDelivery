@@ -11,5 +11,9 @@ namespace Catalog.Bll.Services.Interfaces
  
         /// <summary>Restaurants filtered by a cuisine with pagination.</summary>
         Task<PagedResult<RestaurantCardDto>> GetRestaurantsByCuisineAsync(int cuisineId, int page, int pageSize, CancellationToken ct = default);
+
+        Task<CuisineDto> CreateAsync(CuisineCreateDto dto, CancellationToken ct = default);
+        Task<CuisineDto> UpdateAsync(CuisineUpdateDto dto, CancellationToken ct = default);
+        Task DeleteAsync(int id, CancellationToken ct = default);
     }
 }

@@ -7,13 +7,13 @@ using AutoMapper;
 
 namespace Catalog.Bll.Services
 {
-    public class WorkingHoursService : IWorkingHourService
+    public class WorkingHourService : IWorkingHourService
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
         private readonly IRestaurantContext _restaurantContext;
 
-        public WorkingHoursService(IUnitOfWork uow, IMapper mapper, IRestaurantContext restaurantContext)
+        public WorkingHourService(IUnitOfWork uow, IMapper mapper, IRestaurantContext restaurantContext)
         {
             _uow = uow;
             _mapper = mapper;
