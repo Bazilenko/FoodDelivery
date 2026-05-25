@@ -1,8 +1,10 @@
 using Catalog.Dal.UOW.Interfaces;
 using Catalog.Bll.Services.Interfaces;
+using Catalog.Bll.Helpers; 
 using AutoMapper;
 using Catalog.Bll.DTOs.Dish;
 using Catalog.Dal.Entities;
+using Microsoft.AspNetCore.Http; 
 
 namespace Catalog.Bll.Services
 {
@@ -10,33 +12,37 @@ namespace Catalog.Bll.Services
     {
         private readonly IUnitOfWork _uow;
         private readonly IMapper _mapper;
-        private readonly IRestaurantContext _restaurantContext;
+        private readonly IHttpContextAccessor _httpContextAccessor; 
 
-        public DishOwnerService(IUnitOfWork uow, IMapper mapper, IRestaurantContext restaurantContext)
+        public DishOwnerService(IUnitOfWork uow, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _uow = uow;
             _mapper = mapper;
-            _restaurantContext = restaurantContext;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<IEnumerable<DishManageDto>> GetAllAsync(CancellationToken ct = default)
         {
-            var dishes = await _uow.Dishes.GetByRestaurantAsync(_restaurantContext.RestaurantId, ct: ct);
+            var restaurantId = AuthHelper.GetRestaurantIdFromToken(_httpContextAccessor);
+            
+            var dishes = await _uow.Dishes.GetByRestaurantAsync(restaurantId, ct: ct);
             return _mapper.Map<IEnumerable<DishManageDto>>(dishes);
         }
 
         public async Task<DishManageDto> GetByIdAsync(int id, CancellationToken ct = default)
-            => _mapper.Map<DishManageDto>(await GetOwnedAsync(id, ct));
+        {
+            var restaurantId = AuthHelper.GetRestaurantIdFromToken(_httpContextAccessor);
+            var entity = await GetOwnedAsync(id, restaurantId, ct);
+            return _mapper.Map<DishManageDto>(entity);
+        }
 
         public async Task<DishManageDto> CreateAsync(DishCreateDto dto, CancellationToken ct = default)
         {
-            await AssertCategoryOwnershipAsync(dto.CategoryId, ct);
+            var restaurantId = AuthHelper.GetRestaurantIdFromToken(_httpContextAccessor);
+            await AssertCategoryOwnershipAsync(dto.CategoryId, restaurantId, ct);
 
             var entity = _mapper.Map<Dish>(dto);
-            entity.RestaurantId = _restaurantContext.RestaurantId;
-
-            if (dto.ModifierGroups is not null)
-                entity.ModifierGroups = _mapper.Map<List<ModifierGroup>>(dto.ModifierGroups);
+            entity.RestaurantId = restaurantId;
 
             await _uow.Dishes.AddAsync(entity, ct);
             await _uow.SaveChangesAsync(ct);
@@ -47,10 +53,11 @@ namespace Catalog.Bll.Services
 
         public async Task<DishManageDto> UpdateAsync(DishUpdateDto dto, CancellationToken ct = default)
         {
-            var entity = await GetOwnedAsync(dto.Id, ct);
+            var restaurantId = AuthHelper.GetRestaurantIdFromToken(_httpContextAccessor);
+            var entity = await GetOwnedAsync(dto.Id, restaurantId, ct);
 
             if (entity.CategoryId != dto.CategoryId)
-                await AssertCategoryOwnershipAsync(dto.CategoryId, ct);
+                await AssertCategoryOwnershipAsync(dto.CategoryId, restaurantId, ct);
 
             _mapper.Map(dto, entity);
 
@@ -63,7 +70,9 @@ namespace Catalog.Bll.Services
 
         public async Task SetAvailabilityAsync(DishAvailabilityDto dto, CancellationToken ct = default)
         {
-            var entity = await GetOwnedAsync(dto.Id, ct);
+            var restaurantId = AuthHelper.GetRestaurantIdFromToken(_httpContextAccessor);
+            var entity = await GetOwnedAsync(dto.Id, restaurantId, ct);
+            
             entity.IsAvailable = dto.IsAvailable;
             await _uow.Dishes.UpdateAsync(entity, ct);
             await _uow.SaveChangesAsync(ct);
@@ -71,29 +80,32 @@ namespace Catalog.Bll.Services
 
         public async Task DeleteAsync(int id, CancellationToken ct = default)
         {
-            var entity = await GetOwnedAsync(id, ct);
+            var restaurantId = AuthHelper.GetRestaurantIdFromToken(_httpContextAccessor);
+            var entity = await GetOwnedAsync(id, restaurantId, ct);
+            
             entity.IsDeleted = true;
             await _uow.Dishes.UpdateAsync(entity, ct);
             await _uow.SaveChangesAsync(ct);
         }
 
-        private async Task<Dish> GetOwnedAsync(int id, CancellationToken ct)
+
+        private async Task<Dish> GetOwnedAsync(int id, int restaurantId, CancellationToken ct)
         {
             var entity = await _uow.Dishes.GetByIdAsync(id, ct)
                 ?? throw new KeyNotFoundException($"Dish {id} not found.");
 
-            if (entity.RestaurantId != _restaurantContext.RestaurantId)
+            if (entity.RestaurantId != restaurantId)
                 throw new UnauthorizedAccessException("Dish does not belong to your restaurant.");
 
             return entity;
         }
 
-        private async Task AssertCategoryOwnershipAsync(int categoryId, CancellationToken ct)
+        private async Task AssertCategoryOwnershipAsync(int categoryId, int restaurantId, CancellationToken ct)
         {
             var category = await _uow.Categories.GetByIdAsync(categoryId, ct)
                 ?? throw new KeyNotFoundException($"Category {categoryId} not found.");
 
-            if (category.RestaurantId != _restaurantContext.RestaurantId)
+            if (category.RestaurantId != restaurantId)
                 throw new UnauthorizedAccessException("Category does not belong to your restaurant.");
         }
     }

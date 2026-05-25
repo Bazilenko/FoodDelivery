@@ -1,4 +1,9 @@
 namespace Catalog.Bll.DTOs.DishOption
 {
-    public record DishOptionCreateDto(string Name, decimal Price, bool IsAvailable = true);
+    public class DishOptionCreateDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public bool IsAvailable { get; set; } = true;
+    }
 }

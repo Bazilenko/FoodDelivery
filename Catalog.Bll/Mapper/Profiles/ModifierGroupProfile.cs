@@ -13,9 +13,9 @@ namespace Catalog.Bll.Mapper.Profiles
 
             CreateMap<ModifierGroupCreateDto, ModifierGroup>()
                 .IgnoreBaseEntityProperties()
+                .ForMember(dest => dest.DishOptions, opt => opt.MapFrom(src => src.Options))
                 .ForMember(dest => dest.DishId, opt => opt.Ignore())
-                .ForMember(dest => dest.Dish, opt => opt.Ignore())
-                .ForMember(dest => dest.DishOptions, opt => opt.Ignore());
+                .ForMember(dest => dest.Dish, opt => opt.Ignore());
  
              CreateMap<ModifierGroupUpdateDto, ModifierGroup>()
                 .IgnoreAuditProperties()

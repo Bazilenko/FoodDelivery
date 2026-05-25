@@ -1,4 +1,10 @@
 namespace Catalog.Bll.DTOs.DishOption
 {
-    public record DishOptionUpdateDto(int Id, string Name, decimal Price, bool IsAvailable);
+    public class DishOptionUpdateDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public bool IsAvailable { get; set; }
+    }
 }

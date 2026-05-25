@@ -1,10 +1,10 @@
-using Catalog.Bll.DTOs.DishOption;
-
 namespace Catalog.Bll.DTOs.ModifierGroup
 {
-    public record ModifierGroupUpdateDto(
-        int Id,
-        string Name,
-        int MinSelect,
-        int MaxSelect);
+    public class ModifierGroupUpdateDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int MinSelect { get; set; }
+        public int MaxSelect { get; set; }
+    }
 }

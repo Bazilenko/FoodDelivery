@@ -9,7 +9,7 @@ namespace Catalog.Bll.Services.Interfaces
         Task<IEnumerable<WorkingHourDto>> GetWeekScheduleAsync(CancellationToken ct = default);
         Task<WorkingHourDto> GetByDayAsync(int dayOfWeek, CancellationToken ct = default);
         Task<WorkingHourDto> CreateAsync(WorkingHourCreateDto dto, CancellationToken ct = default);
-        Task<WorkingHourDto> UpdateAsync(WorkingHourUpdateDto dto, CancellationToken ct = default);
+        Task<List<WorkingHourDto>> UpdateAsync(WorkingHoursUpdateDto dto, CancellationToken ct = default);
         Task DeleteAsync(int id, CancellationToken ct = default);
     }
 }

@@ -5,15 +5,17 @@ using Catalog.Bll.DTOs.WorkingHour;
 
 namespace Catalog.Bll.DTOs.Restaurant
 {
-    public record RestaurantProfileDto(
-        int Id,
-        string Name,
-        string? ImageUrl,
-        string? Description,
-        decimal Rating,
-        decimal DeliveryRadiusKm,
-        IEnumerable<CuisineDto> Cuisines,
-        IEnumerable<AddressDto> Addresses,
-        IEnumerable<ContactDto> Contacts,
-        IEnumerable<WorkingHourDto> WorkingHours);
+    public class RestaurantProfileDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
+        public string? Description { get; set; }
+        public decimal Rating { get; set; }
+        public decimal DeliveryRadiusKm { get; set; }
+        public IEnumerable<CuisineDto> Cuisines { get; set; } = [];
+        public IEnumerable<AddressDto> Addresses { get; set; } = [];
+        public IEnumerable<ContactDto> Contacts { get; set; } = [];
+        public IEnumerable<WorkingHourDto> WorkingHours { get; set; } = [];
+    }
 }

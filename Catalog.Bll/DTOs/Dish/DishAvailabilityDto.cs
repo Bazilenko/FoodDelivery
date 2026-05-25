@@ -1,5 +1,8 @@
 namespace Catalog.Bll.DTOs.Dish
 {
-    public record DishAvailabilityDto(int Id, bool IsAvailable);
-
+    public class DishAvailabilityDto
+    {
+        public int Id { get; set; }
+        public bool IsAvailable { get; set; }
+    }
 }
