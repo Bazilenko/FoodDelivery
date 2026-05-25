@@ -7,13 +7,12 @@ using Orders.Dal.Context.Interfaces;
 using Orders.Dal.Context;
 using Orders.Dal.UoW;
 using Orders.Dal.UoW.Interfaces;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Data.SqlClient;
 using Orders.Bll.Mapper.Profiles;
+using Microsoft.EntityFrameworkCore;
 using Orders.Bll.Services;
 using Orders.Bll.Services.Interfaces;
-using Orders.Dal.Repository;
-using Dapper;
+using Orders.Shared.Context;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,30 +21,26 @@ builder.AddServiceDefaults();
 
 
 // Add services to the container.
-builder.Services.AddScoped<IDapperContext>(s => new DapperContext(builder.Configuration.GetConnectionString("ordersDb")));
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-builder.Services.AddScoped<IOrderDishRepository, OrderDishRepository>();
+builder.Services.AddScoped<IDapperContext, DapperContext>();
+builder.Services.AddScoped<IRestaurantContext, FakeRestaurantContext>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IAnalyticsRepository, AnalyticsRepository>();
+builder.Services.AddScoped<IOrderDishOptionRepository, OrderDishOptionRepository>();
+builder.Services.AddScoped<IOrderDishRepository, OrderDishRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IOrderStatusHistoryRepository, OrderStatusHistoryRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
-builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddAutoMapper(typeof(CustomerProfile));
+builder.Services.AddScoped<IAdminAnalyticsService, AdminAnalyticsService>();
+builder.Services.AddScoped<IRestaurantAnalyticsService, RestaurantAnalyticsService>();
 builder.Services.AddAutoMapper(typeof(OrderProfile));
-builder.Services.AddAutoMapper(typeof(PaymentProfile));
 
 
 builder.Services.AddControllers();
-
-builder.Services.AddScoped((s) => new SqlConnection(builder.Configuration.GetConnectionString("ordersDb")));
-
-using (var connection = new SqlConnection(builder.Configuration.GetConnectionString("ordersDb")))
-{
-    var sql = File.ReadAllText("__createDbAndTables.sql");
-    connection.Execute(sql);
-}
+builder.Services.AddDbContext<OrderDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("OrdersDb")));
+builder.Services.AddScoped((s) => new SqlConnection(builder.Configuration.GetConnectionString("OrdersDb")));
 
 builder.Services.AddScoped<IDbTransaction>(s =>
 {
@@ -64,7 +59,11 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
+    db.Database.Migrate();
+}
 
 app.MapDefaultEndpoints();
 
