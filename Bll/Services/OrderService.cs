@@ -1,108 +1,125 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using AutoMapper;
-using Dal.DTOs.Order;
+﻿using AutoMapper;
 using Orders.Dal.Entities;
+using Orders.Dal.Enums;
 using Orders.Dal.UoW.Interfaces;
 using Orders.Bll.DTOs.Order;
-using Orders.Bll.DTOs.OrderDish;
-using Orders.Bll.Exception;
 using Orders.Bll.Services.Interfaces;
 
-namespace Orders.Bll.Services
+namespace Orders.Bll.Services;
+public class OrderService : IOrderService
 {
-    public class OrderService : IOrderService
+    private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
+
+    public OrderService(IUnitOfWork uow, IMapper mapper)
     {
-        protected IUnitOfWork _untiOfWork;
-        protected IMapper _mapper;
-        public OrderService(IUnitOfWork unitOfWork, IMapper mapper)
+        _uow = uow;
+        _mapper = mapper;
+    }
+
+    public async Task<IEnumerable<OrderResponseDto>> GetCustomerOrdersAsync(int customerId)
+    {
+        var orders = await _uow.Orders.GetOrdersByCustomerIdAsync(customerId);
+
+        return _mapper.Map<IEnumerable<OrderResponseDto>>(orders);
+    }
+
+    public async Task<IEnumerable<OrderResponseDto>> GetRestaurantOrdersAsync(int restaurantId)
+    {
+        var orders = await _uow.Orders.GetOrdersByRestaurantIdAsync(restaurantId);
+        return _mapper.Map<IEnumerable<OrderResponseDto>>(orders);
+    }
+
+    public async Task<OrderResponseDto?> GetOrderByIdForCustomerAsync(int orderId, int customerId)
+    {
+        var order = await _uow.Orders.GetFullOrderDetailsAsync(orderId);
+
+        if (order == null || order.CustomerId != customerId)
+            return null;
+
+        return _mapper.Map<OrderResponseDto>(order);
+    }
+
+    public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto dto, int customerId)
+    {
+        _uow.BeginTransaction();
+        try
         {
-            _untiOfWork = unitOfWork;
-            _mapper = mapper;
-        }
+            var order = _mapper.Map<Order>(dto);
+            order.CustomerId = customerId;
+            order.Status = OrderStatus.Pending;
+            order.CreatedAt = DateTime.UtcNow;
+            order.DeliveryFee = 55.00m;
 
-        public async Task<IEnumerable<OrderDto?>> GetAllAsync()
-        {
-            var orders = await _untiOfWork._orderRepository.GetAllAsync();
-            if (orders == null)
-                throw new NotFoundException("List of orders is empty!");
-            return _mapper.Map<IEnumerable<OrderDto?>>(orders);
-        }
+            var orderId = await _uow.Orders.AddAsync(order);
+            decimal totalAmount = order.DeliveryFee;
 
-        public async Task<decimal?> GetIncomeByDateAsync(DateTime fromDate, DateTime toDate)
-        {
-            var result = await _untiOfWork._orderRepository.GetIncomeByDate(fromDate, toDate);
-            if (result == 0)
-                throw new NotFoundException($"There is not income for this dates {fromDate} - {toDate}");
-            return result;
-        }
-
-        public async Task<OrderDto> CreateAsync(OrderCreateDto dto)
-        {
-            var entity = _mapper.Map<Order>(dto);
-            int id = await _untiOfWork._orderRepository.AddAsync(entity);
-            entity.Id = id;
-
-            _untiOfWork.Commit();
-            return _mapper.Map<OrderDto>(entity);
-        }
-
-        public async Task<OrderReceiptDto> GetOrderWithDishesAsync(int orderId)
-        {
-            var order = await _untiOfWork._orderRepository.GetWithItemsByIdAsync(orderId);
-            if (order == null)
-                throw new NotFoundException($"There is no Order with Id: {orderId}");
-            return _mapper.Map<OrderReceiptDto>(order);
-        }
-
-        public async Task<OrderDishDto> AddDishToOrder(OrderDishCreateDto dto)
-        {
-            var order = await _untiOfWork._orderRepository.GetAsync(dto.OrderId);
-            if (order == null)
-                throw new NotFoundException($"Order with id {dto.OrderId} not found!");
-            var entity = _mapper.Map<OrderDish>(dto);
-            int id = await _untiOfWork._orderDishRepository.AddAsync(entity);
-            entity.Id = id;
-            var newTotalCost = await CalculateOrderCost(dto.OrderId);
-            await UpdateOrderCost(order, newTotalCost);
-            return _mapper.Map<OrderDishDto>(entity);
-        }
-
-        public async Task UpdateOrderCost(Order order, decimal cost)
-        {
-            
-            order.TotalAmount = cost;
-            await _untiOfWork._orderRepository.ReplaceAsync(order);
-             _untiOfWork.Commit();
-        }
-
-        public async Task<OrderDto> GetById(int id)
-        {
-            var order = await _untiOfWork._orderRepository.GetAsync(id);
-            if (order == null)
-                throw new NotFoundException($"Order with id {id} not found!");
-            return _mapper.Map<OrderDto>(order);
-        }
-        
-
-
-        public async Task<decimal> CalculateOrderCost(int orderId)
-        {
-            var dishes = await _untiOfWork._orderDishRepository.GetByOrderIdAsync(orderId);
-            decimal totalPrice = 0;
-            if(dishes != null)
+            foreach (var dish in order.OrderDishes)
             {
-                foreach (var dish in dishes)
+                dish.OrderId = orderId;
+                var dishId = await _uow.OrderDishes.AddAsync(dish);
+
+                totalAmount += (dish.PriceAtTimeOfOrder * dish.Quantity);
+
+                foreach (var option in dish.OrderDishOptions)
                 {
-                    totalPrice += dish.Quantity * dish.PriceAtTimeOfOrder;
+                    option.OrderDishId = dishId;
+                    await _uow.OrderDishOptions.AddAsync(option);
+
+                    totalAmount += (option.PriceAtTimeOfOrder * dish.Quantity);
                 }
             }
-            return totalPrice;
 
+            order.Id = orderId;
+            order.TotalAmount = totalAmount;
+            await _uow.Orders.ReplaceAsync(order);
+
+            await _uow.StatusHistory.AddAsync(new OrderStatusHistory
+            {
+                OrderId = orderId,
+                Status = OrderStatus.Pending,
+                Comment = "Замовлення прийнято"
+            });
+
+            _uow.Commit();
+
+            var result = await _uow.Orders.GetFullOrderDetailsAsync(orderId);
+            return _mapper.Map<OrderResponseDto>(result);
+        }
+        catch (Exception)
+        {
+            _uow.Rollback();
+            throw;
+        }
+    }
+
+
+    public async Task UpdateOrderStatusAsync(int orderId, int restaurantId, UpdateOrderStatusRequestDto dto)
+    {
+        var order = await _uow.Orders.GetAsync(orderId);
+        if (order == null || order.RestaurantId != restaurantId)
+        {
+            throw new UnauthorizedAccessException("Ви не маєте доступу до цього замовлення.");
+        }
+
+        _uow.BeginTransaction();
+        try
+        {
+            await _uow.Orders.UpdateStatusAsync(orderId, dto.Status);
+
+            await _uow.StatusHistory.AddAsync(new OrderStatusHistory
+            {
+                OrderId = orderId,
+                Status = dto.Status,
+                Comment = dto.Comment ?? $"Статус змінено на {dto.Status}"
+            });
+
+            _uow.Commit();
+        }
+        catch
+        {
+            _uow.Rollback();
+            throw;
         }
     }
 }

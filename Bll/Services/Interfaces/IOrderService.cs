@@ -1,21 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Dal.DTOs.Order;
-using Orders.Bll.DTOs.Order;
-using Orders.Bll.DTOs.OrderDish;
+﻿using Orders.Bll.DTOs.Order;
 
 namespace Orders.Bll.Services.Interfaces
 {
     public interface IOrderService
     {
-        Task<IEnumerable<OrderDto?>> GetAllAsync();
-        Task<decimal?> GetIncomeByDateAsync(DateTime fromDate, DateTime toDate);
-        Task<OrderDto> CreateAsync(OrderCreateDto dto);
-        Task<OrderReceiptDto> GetOrderWithDishesAsync(int orderId);
-        Task<OrderDishDto> AddDishToOrder(OrderDishCreateDto dto);
+        Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto dto, int customerId);
 
+        Task<OrderResponseDto?> GetOrderByIdForCustomerAsync(int orderId, int customerId);
+
+        Task<IEnumerable<OrderResponseDto>> GetCustomerOrdersAsync(int customerId);
+
+        Task<IEnumerable<OrderResponseDto>> GetRestaurantOrdersAsync(int restaurantId);
+
+        Task UpdateOrderStatusAsync(
+            int orderId,
+            int restaurantId,
+            UpdateOrderStatusRequestDto dto);
     }
 }
