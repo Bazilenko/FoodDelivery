@@ -22,6 +22,7 @@
     <ProjectReference Include="..\Delivery.Api\Delivery.Api.csproj" />
     <ProjectReference Include="..\Gateway.Api\Gateway.Api.csproj" />
     <ProjectReference Include="..\Orders\Orders.Api.csproj" />
+    <ProjectReference Include="..\AuthService\AuthService.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,19 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Orders.Dal.Entities
 {
     [Table("OrderDishes")]
-    public class OrderDish
+    public class OrderDish : BaseEntity
     {
-        public int Id { get; set; }
         public int OrderId { get; set; }
-        public int DishId { get; set; }
-        public int Quantity { get; set; } = 1;
+        public int DishId { get; set; }           
+
+        public string DishNameSnapshot { get; set; } = string.Empty;
+        public string? CategorySnapshot { get; set; }
+
+        public int Quantity { get; set; }
         public decimal PriceAtTimeOfOrder { get; set; }
+
+        public Order Order { get; set; } = null!;
+        public ICollection<OrderDishOption> OrderDishOptions { get; set; } = [];
     }
 }

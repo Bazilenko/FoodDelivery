@@ -1,109 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Linq;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Orders.Dal.Repository.Interfaces;
+using Dommel;
 using Orders.Dal.Context.Interfaces;
-using Dapper;
-using Microsoft.Data.SqlClient;
+using Orders.Dal.Entities;
+using Orders.Dal.Repository.Interfaces;
 
 namespace Orders.Dal.Repository
-{ 
-    public class GenericRepository<T> : IGenericRepository<T> where T : class
+{
+    public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
         protected readonly IDapperContext _context;
         private readonly string _tableName;
 
-        public GenericRepository(IDapperContext context, string tableName)
+        public GenericRepository(IDapperContext context)
         {
             _context = context;
-            _tableName = tableName;
+
+            var tableAttr = typeof(T).GetCustomAttribute<TableAttribute>();
+            _tableName = tableAttr?.Name ?? typeof(T).Name;
         }
 
         public async Task<int> AddAsync(T entity)
         {
-            var insertQuery = GenerateInsertQuery();
-            return await _context.Connection.ExecuteScalarAsync<int>(insertQuery,
-                param: entity,
-                transaction: _context.Transaction);
+            var id = await _context.Connection.InsertAsync(entity, transaction: _context.Transaction);
+            return Convert.ToInt32(id);
         }
 
         public async Task<int> AddRangeAsync(IEnumerable<T> items)
         {
-            var query = GenerateInsertQuery();
-            return await _context.Connection.ExecuteAsync(query,
-                param: items,
-                transaction: _context.Transaction);
+            int count = 0;
+            foreach (var item in items)
+            {
+                await _context.Connection.InsertAsync(item, transaction: _context.Transaction);
+                count++;
+            }
+            return count;
         }
 
         public async Task DeleteAsync(int id)
         {
-            var sql = $"DELETE FROM {_tableName} WHERE Id = @Id";
-            await _context.Connection.ExecuteAsync(sql,
-                param: new { Id = id },
-                transaction: _context.Transaction);
+            var entity = await GetAsync(id);
+            await _context.Connection.DeleteAsync(entity, transaction: _context.Transaction);
         }
 
         public async Task<IEnumerable<T>> GetAllAsync()
         {
-            var sql = $"SELECT * FROM {_tableName}";
-            return await _context.Connection.QueryAsync<T>(sql, 
-                transaction: _context.Transaction);
+            return await _context.Connection.GetAllAsync<T>(_context.Transaction);
         }
 
         public async Task<T> GetAsync(int id)
         {
-            var sql = $"SELECT * FROM {_tableName} WHERE Id = @Id";
-            var result = await _context.Connection.QuerySingleOrDefaultAsync<T>(sql,
-                param: new { Id = id },
-                transaction: _context.Transaction);
+            var result = await _context.Connection.GetAsync<T>(id, _context.Transaction);
 
             if (result == null)
-                throw new KeyNotFoundException($"{_tableName} with id [{id}] could not be found.");
-            
+                throw new KeyNotFoundException($"{typeof(T).Name} with id [{id}] could not be found.");
+
             return result;
         }
 
         public async Task ReplaceAsync(T entity)
         {
-            var updateQuery = GenerateUpdateQuery();
-            await _context.Connection.ExecuteAsync(updateQuery,
-                param: entity,
-                transaction: _context.Transaction);
-        }
-
-
-        private IEnumerable<PropertyInfo> GetProperties => typeof(T).GetProperties();
-
-        private static List<string> GenerateListOfProperties(IEnumerable<PropertyInfo> listOfProperties)
-        {
-            return (from prop in listOfProperties
-                    let attributes = prop.GetCustomAttributes(typeof(DescriptionAttribute), false)
-                    where (attributes.Length <= 0 || (attributes[0] as DescriptionAttribute)?.Description != "ignore")
-                          && prop.Name != "Id"
-                          && (prop.PropertyType == typeof(string) || !typeof(System.Collections.IEnumerable).IsAssignableFrom(prop.PropertyType))
-                    select prop.Name).ToList();
-        }
-
-        private string GenerateInsertQuery()
-        {
-            var properties = GenerateListOfProperties(GetProperties);
-            var columns = string.Join(", ", properties.Select(p => $"[{p}]"));
-            var values = string.Join(", ", properties.Select(p => $"@{p}"));
-
-            return $"INSERT INTO {_tableName} ({columns}) VALUES ({values}); SELECT SCOPE_IDENTITY();";
-        }
-
-        private string GenerateUpdateQuery()
-        {
-            var properties = GenerateListOfProperties(GetProperties);
-            var setClause = string.Join(", ", properties.Select(p => $"{p}=@{p}"));
-
-            return $"UPDATE {_tableName} SET {setClause} WHERE Id=@Id";
+            await _context.Connection.UpdateAsync(entity, transaction: _context.Transaction);
         }
     }
 }

@@ -17,21 +17,26 @@ namespace Catalog.Dal.Configurations
 
             builder.Property(r => r.Name)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(200);
 
             builder.Property(r => r.Rating)
                 .IsRequired()
-                .HasPrecision(10, 2);
+                .HasColumnType("decimal(3,2)");
 
             builder.Property(r => r.Description)
                 .IsRequired()
-                .HasMaxLength(200);
+                .HasMaxLength(2000);
 
             builder.Property(r => r.ImageUrl)
-                .HasMaxLength(255);
+                .HasMaxLength(500);
+
+            builder.Property(r => r.DeliveryRadiusKm)
+                .HasColumnType("decimal(6,2)");
+            
+            builder.HasQueryFilter(r => !r.IsDeleted);
 
             builder.HasMany(r => r.Dishes)
-                .WithOne(d => d.Restaturant)
+                .WithOne(d => d.Restaurant)
                 .HasForeignKey(d => d.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -40,10 +45,26 @@ namespace Catalog.Dal.Configurations
                 .HasForeignKey(c => c.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasMany(r => r.WorkingHours)
+                .WithOne(w => w.Restaurant)
+                .HasForeignKey(w => w.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.HasMany(r => r.Addresses)
                 .WithOne(a => a.Restaurant)
                 .HasForeignKey(a => a.RestaurantId) 
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(r => r.RestaurantCuisines)
+                .WithOne(rc => rc.Restaurant)
+                .HasForeignKey(rc => rc.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(r => r.Categories)
+                .WithOne(c => c.Restaurant)
+                .HasForeignKey(c => c.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+                   
         }
     }
 }

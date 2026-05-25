@@ -16,6 +16,14 @@ namespace Catalog.Dal.UOW.Interfaces
         IContactRepository Contacts { get; }
         IAddressRepository Addresses { get; }
         IDishOptionRepository DishOptions { get; }
-        Task SaveChangesAsync(CancellationToken ct = default);
+        ICuisineRepository Cuisines {get;}
+        IModifierGroupRepository ModifierGroups {get;}
+        IRestaurantCuisineRepository RestaurantCuisines {get;}
+        IWorkingHourRepository WorkingHours {get;}
+
+        Task<int> SaveChangesAsync(CancellationToken ct = default);
+        void Dispose();
+        ValueTask DisposeAsync();
+
     }
 }

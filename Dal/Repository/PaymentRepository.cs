@@ -1,41 +1,30 @@
-﻿using System.Collections.Generic;
-using System.Data;
-using System.Threading.Tasks;
-using Orders.Dal.Context;
+﻿using Orders.Dal.Context.Interfaces;
 using Orders.Dal.Entities;
-using Orders.Dal.Repository;
 using Orders.Dal.Repository.Interfaces;
-using Orders.Dal.Context.Interfaces;
-using Dapper;
+using Dommel;
 
 namespace Orders.Dal.Repository
 {
     public class PaymentRepository : GenericRepository<Payment>, IPaymentRepository
     {
-        public PaymentRepository(IDapperContext context) : base(context, "Payments")
-        {
-        }
+        public PaymentRepository(IDapperContext context) : base(context) { }
 
         public async Task<Payment?> GetByOrderIdAsync(int orderId)
         {
-            string query = "SELECT * FROM Payments WHERE OrderId = @orderId";
-
-            return await _context.Connection.QueryFirstOrDefaultAsync<Payment>(
-                query, 
-                new { orderId }, 
-                transaction: _context.Transaction
-            );
+            var result = await _context.Connection.SelectAsync<Payment>(
+                p => p.OrderId == orderId, 
+                _context.Transaction);
+            
+            return result.FirstOrDefault();
         }
 
-        public async Task<Payment?> GetByPaymentMethodAsync(string paymentMethod)
+        public async Task<Payment?> GetByTransactionIdAsync(string transactionId)
         {
-            string query = "SELECT * FROM Payments WHERE PaymentMethod = @paymentMethod";
-
-            return await _context.Connection.QueryFirstOrDefaultAsync<Payment>(
-                query, 
-                new { paymentMethod }, 
-                transaction: _context.Transaction
-            );
+            var result = await _context.Connection.SelectAsync<Payment>(
+                p => p.TransactionId == transactionId, 
+                _context.Transaction);
+            
+            return result.FirstOrDefault();
         }
     }
 }

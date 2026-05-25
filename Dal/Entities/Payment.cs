@@ -1,17 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Orders.Dal.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Orders.Dal.Entities
 {
-    public class Payment
+    [Table("Payments")]
+    public class Payment : BaseEntity
     {
-        public int Id { get; set; }
         public int OrderId { get; set; }
         public decimal Amount { get; set; }
-        public string Status { get; set; }
-        public string PaymentMethod { get; set; }
+        public PaymentStatus Status { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;  
+
+        public string? TransactionId { get; set; }
+
+        public Order Order { get; set; } = null!;
     }
 }

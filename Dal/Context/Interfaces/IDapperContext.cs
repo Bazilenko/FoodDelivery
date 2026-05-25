@@ -1,12 +1,12 @@
 using System.Data;
 
-namespace Orders.Dal.Context.Interfaces{
-public interface IDapperContext : IDisposable
+namespace Orders.Dal.Context.Interfaces
+{
+    public interface IDapperContext
     {
         IDbConnection Connection { get; }
-        IDbTransaction Transaction { get; }
+        IDbTransaction? Transaction { get; }
         void BeginTransaction();
-        void Commit();
-        void Rollback();
+        void CloseConnection(); 
     }
 }

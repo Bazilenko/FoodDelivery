@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using Catalog.Dal.Context;
 using Catalog.Dal.Entities;
 using Catalog.Dal.Repositories.Interfaces;
@@ -11,10 +7,20 @@ namespace Catalog.Dal.Repositories
 {
     public class DishOptionRepository : GenericRepository<DishOption>, IDishOptionRepository
     {
-        private readonly MyDbContext _dbContext;
-        public DishOptionRepository(MyDbContext dbContext) : base(dbContext)
+        public DishOptionRepository(MyDbContext dbContext) : base(dbContext){ }
+
+        public async Task<IEnumerable<DishOption>> GetAvailableByModifierGroupAsync(int modifierGroupId, CancellationToken ct = default)
         {
-            _dbContext = dbContext;
+            return await _dbSet
+                .Where(o => o.ModifierGroupId == modifierGroupId && o.IsAvailable)
+                .ToListAsync(ct);
+        }
+
+        public async Task<IEnumerable<DishOption>> GetByModifierGroupAsync(int modifierGroupId, CancellationToken ct = default)
+        {
+            return await _dbSet
+                .Where(o => o.ModifierGroupId == modifierGroupId)
+                .ToListAsync(ct);
         }
     }
 }

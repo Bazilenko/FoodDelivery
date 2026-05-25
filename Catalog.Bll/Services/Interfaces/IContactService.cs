@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Catalog.Bll.DTOs.Contact;
+﻿using Catalog.Bll.DTOs.Contact;
 
 namespace Catalog.Bll.Services.Interfaces
 {
-    public interface IContactService 
+    public interface IContactService
     {
-        Task<IEnumerable<ContactDto>> GetAll();
-        Task<ContactDto> GetById(int id);
-        Task Update(ContactUpdateDto dto);
-        Task<ContactDto> Create(ContactCreateDto dto);
+        Task<IEnumerable<ContactDto>> GetAllAsync(CancellationToken ct = default);
+        Task<ContactDto> GetByIdAsync(int id, CancellationToken ct = default);
+        Task<ContactDto> CreateAsync(ContactCreateDto dto, CancellationToken ct = default);
+        Task<ContactDto> UpdateAsync(ContactUpdateDto dto, CancellationToken ct = default);
+        Task DeleteAsync(int id, CancellationToken ct = default);
     }
 }

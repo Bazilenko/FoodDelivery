@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using Catalog.Dal.Context;
 using Catalog.Dal.Entities;
 using Catalog.Dal.Repositories.Interfaces;
@@ -12,52 +7,31 @@ namespace Catalog.Dal.Repositories
 {
     public class DishRepository : GenericRepository<Dish>, IDishRepository
     {
-        private MyDbContext _dbContext;
-        public DishRepository(MyDbContext dbContext) : base(dbContext)
+        public DishRepository(MyDbContext dbContext) : base(dbContext){}
+        public async Task<Dish?> GetWithModifiersAsync(int dishId, CancellationToken ct = default)
         {
-            _dbContext = dbContext;
+            return await _dbSet
+                .Include(d => d.ModifierGroups)
+                    .ThenInclude(mg => mg.DishOptions)
+                .FirstOrDefaultAsync(d => d.Id == dishId, ct);
+        }
+        public async Task<IEnumerable<Dish>> GetByCategoryAsync(int categoryId, CancellationToken ct = default)
+        {
+            return await _dbSet
+                .Where(d => d.CategoryId == categoryId)
+                .ToListAsync(ct);
         }
 
-        //Explicit loading -------------
-        public async Task<IEnumerable<Dish?>> GetDishesByCategory(int categoryId)
+        public async Task<IEnumerable<Dish>> GetByRestaurantAsync(int restaurantId, bool availableOnly = false, CancellationToken ct = default)
         {
-            var category = await _dbContext.Categories.FindAsync(categoryId);
-            if (category == null) 
-                return Enumerable.Empty<Dish>();
-
-            await _dbContext.Entry(category)
-                .Collection(c => c.Dishes)
-                .LoadAsync();
-
-            return category.Dishes;
-        }
-        public async Task<IEnumerable<Dish>> GetAllAsync()
-        {
-            var query = _dbContext.Dishes.Include(d => d.Category);
-            var dishes = await query.ToListAsync();
-
-            foreach (var dish in dishes)
-            {
-                await _dbContext.Entry(dish)
-                    .Reference(d => d.Category)
-                    .LoadAsync();
-            }
-
-            return dishes;
-        }
-
-        public async Task<Dish> GetByIdAsync(int id, CancellationToken ct = default)
-        {
-            var dish = await _dbContext.Dishes.FindAsync(id);
-            if (dish != null)
-            {
-                await _dbContext.Entry(dish)
-               .Reference(d => d.Category)
-                .LoadAsync();
-            }
-
-            return dish;
-
+            var query = _dbSet.Where(d => d.RestaurantId == restaurantId);
+ 
+            if (availableOnly)
+                query = query.Where(d => d.IsAvailable);
+ 
+            return await query
+                .Include(d => d.Category)
+                .ToListAsync(ct);
         }
     }
 }

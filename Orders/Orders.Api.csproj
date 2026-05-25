@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Bll\Orders.Bll.csproj" />
     <ProjectReference Include="..\Dal\Orders.Dal.csproj" />
     <ProjectReference Include="..\Orders.ServiceDefaults\Orders.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Orders.Shared\Orders.Shared.csproj" />
   </ItemGroup>
 
 </Project>

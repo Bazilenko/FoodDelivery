@@ -2,8 +2,7 @@ using FluentAssertions;
 using Catalog.Dal.Entities;
 using Catalog.Dal.Repositories;
 using Catalog.Dal.Context;
-using Microsoft.EntityFrameworkCore;
-using Xunit;
+
 
 namespace Catalog.Dal.Tests;
 
@@ -19,82 +18,106 @@ public class DishRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task GetDishesByCategory_ExistingCategory_ReturnsDishesWithExplicitLoading()
+    public async Task GetByCategoryAsync_ExistingCategory_ReturnsCorrectDishes()
     {
         // Arrange
-        var category = TestDataBuilder.CreateCategory(name: "Italian");
+        var restaurantId = 1;
+        var category = TestDataBuilder.CreateCategory(id: 1, restaurantId: restaurantId, name: "Italian");
         await _context.Categories.AddAsync(category);
-        await _context.SaveChangesAsync(); 
 
-        var dish1 = TestDataBuilder.CreateDish(name: "Pasta", categoryId: category.Id);
-        var dish2 = TestDataBuilder.CreateDish(name: "Lasagna", categoryId: category.Id);
-        await _context.Dishes.AddRangeAsync(dish1, dish2);
+        var dishes = new List<Dish>
+        {
+            TestDataBuilder.CreateDish(id: 1, restaurantId: restaurantId, categoryId: category.Id, name: "Pasta"),
+            TestDataBuilder.CreateDish(id: 2, restaurantId: restaurantId, categoryId: category.Id, name: "Pizza"),
+            TestDataBuilder.CreateDish(id: 3, restaurantId: restaurantId, categoryId: 99, name: "Other")
+        };
+        await _context.Dishes.AddRangeAsync(dishes);
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _sut.GetDishesByCategory(category.Id);
+        var result = await _sut.GetByCategoryAsync(category.Id);
 
         // Assert
         result.Should().HaveCount(2);
-        result.Should().AllSatisfy(d => d!.CategoryId.Should().Be(category.Id));
+        result.Should().AllSatisfy(d => d.CategoryId.Should().Be(category.Id));
     }
 
     [Fact]
-    public async Task GetAllAsync_ReturnsAllDishesWithCategoriesLoaded()
+    public async Task GetByRestaurantAsync_WithAvailableOnly_ShouldFilterCorrectly()
     {
         // Arrange
-        var category = TestDataBuilder.CreateCategory(name: "Drinks");
+        var restaurantId = 10;
+        var category = TestDataBuilder.CreateCategory(restaurantId: restaurantId);
         await _context.Categories.AddAsync(category);
-        await _context.SaveChangesAsync();
 
-        var dish = TestDataBuilder.CreateDish(name: "Cola", categoryId: category.Id);
-        await _context.Dishes.AddAsync(dish);
+        var dishes = new List<Dish>
+        {
+            new Dish { Id = 1, Name = "Available", IsAvailable = true, RestaurantId = restaurantId, CategoryId = category.Id, Price = 100 },
+            new Dish { Id = 2, Name = "Not Available", IsAvailable = false, RestaurantId = restaurantId, CategoryId = category.Id, Price = 100 },
+            new Dish { Id = 3, Name = "Other Restaurant", IsAvailable = true, RestaurantId = 99, CategoryId = category.Id, Price = 100 }
+        };
+        await _context.Dishes.AddRangeAsync(dishes);
         await _context.SaveChangesAsync();
-
-        _context.ChangeTracker.Clear();
 
         // Act
-        var result = await _sut.GetAllAsync();
+        var result = await _sut.GetByRestaurantAsync(restaurantId, availableOnly: true);
 
         // Assert
-        result.Should().NotBeEmpty();
-        var firstDish = result.First();
-        firstDish.Category.Should().NotBeNull(); // Explicit/Eager loading
-        firstDish.Category.Name.Should().Be("Drinks");
+        result.Should().HaveCount(1);
+        result.Single().Name.Should().Be("Available");
+        result.Single().Category.Should().NotBeNull(); 
     }
 
     [Fact]
-    public async Task GetByIdAsync_ExistingId_ReturnsDishWithCategory()
+    public async Task GetWithModifiersAsync_ShouldLoadFullHierarchy()
     {
         // Arrange
-        var category = TestDataBuilder.CreateCategory(name: "Burgers");
+        var restaurantId = 1;
+        var category = TestDataBuilder.CreateCategory(restaurantId: restaurantId);
         await _context.Categories.AddAsync(category);
-        await _context.SaveChangesAsync();
 
-        var dish = TestDataBuilder.CreateDish(name: "Cheeseburger", categoryId: category.Id);
+        var dish = TestDataBuilder.CreateDish(id: 1, restaurantId: restaurantId, categoryId: category.Id);
+        var modifierGroup = TestDataBuilder.CreateModifierGroup(id: 1, dishId: dish.Id, name: "Sauces");
+        var option = TestDataBuilder.CreateDishOption(id: 1, groupId: modifierGroup.Id, name: "Ketchup");
+
         await _context.Dishes.AddAsync(dish);
+        await _context.ModifierGroups.AddAsync(modifierGroup);
+        await _context.DishesOptions.AddAsync(option);
         await _context.SaveChangesAsync();
 
         _context.ChangeTracker.Clear();
 
         // Act
-        var result = await _sut.GetByIdAsync(dish.Id);
+        var result = await _sut.GetWithModifiersAsync(dish.Id);
 
         // Assert
         result.Should().NotBeNull();
-        result.Name.Should().Be("Cheeseburger");
-        result.Category.Should().NotBeNull(); // Check LoadAsync 
-        result.Category.Name.Should().Be("Burgers");
+        result!.ModifierGroups.Should().NotBeEmpty();
+        var group = result.ModifierGroups.First();
+        group.Name.Should().Be("Sauces");
+        group.DishOptions.Should().NotBeEmpty();
+        group.DishOptions.First().Name.Should().Be("Ketchup");
     }
 
     [Fact]
-    public async Task GetByIdAsync_NonExistingId_ReturnsNull()
+    public async Task GetByRestaurantAsync_ShouldLoadCategoryEvenIfMultipleRestaurantsExist()
     {
+        // Arrange
+        var res1 = 1;
+        var cat1 = TestDataBuilder.CreateCategory(id: 1, restaurantId: res1, name: "Cat1");
+        var dish1 = TestDataBuilder.CreateDish(restaurantId: res1, categoryId: cat1.Id);
+
+        await _context.Categories.AddAsync(cat1);
+        await _context.Dishes.AddAsync(dish1);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
+
         // Act
-        var result = await _sut.GetByIdAsync(999);
+        var result = await _sut.GetByRestaurantAsync(res1);
 
         // Assert
-        result.Should().BeNull();
+        result.First().Category.Should().NotBeNull();
+        result.First().Category.Name.Should().Be("Cat1");
     }
 
     public void Dispose()

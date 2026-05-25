@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dal\Orders.Dal.csproj" />
+    <ProjectReference Include="..\Orders.Shared\Orders.Shared.csproj" />
   </ItemGroup>
 
 </Project>

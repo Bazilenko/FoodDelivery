@@ -9,6 +9,7 @@ namespace Orders.Dal.Repository.Interfaces
 {
     public interface IOrderDishRepository : IGenericRepository<OrderDish>
     {
-        Task<IEnumerable<OrderDish>> GetByOrderIdAsync(int orderId);
+        
+
     }
 }

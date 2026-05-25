@@ -18,33 +18,43 @@ namespace Catalog.Dal.Configurations
 
             builder.Property(d => d.Name)
                 .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(200);
 
             builder.Property(d => d.Description)
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(1000);
 
             builder.Property(d => d.Price)
                 .IsRequired()
-                .HasPrecision(10,2);
+                .HasColumnType("decimal(10,2)");
                 
+            builder.Property(d => d.Weight)
+                .HasColumnType("decimal(8,2)");
+
+            builder.Property(d => d.Unit)
+                .HasMaxLength(20);
+
+            builder.Property(d => d.Calories)
+                .HasColumnType("decimal(8,2)");
+
             builder.Property(d => d.ImageUrl)
-                .IsRequired()
-                .HasMaxLength(255);
+                .HasMaxLength(500);
+            
+            builder.HasQueryFilter(d => !d.IsDeleted);
 
             builder.HasOne(d => d.Category)
                 .WithMany(c => c.Dishes)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne(d => d.Restaturant)
+            builder.HasOne(d => d.Restaurant)
                 .WithMany(r => r.Dishes)
                 .HasForeignKey(d => d.RestaurantId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(d => d.DishOptions)
-                .WithOne(o => o.Dish)
-                .HasForeignKey(o => o.DishId)
+            builder.HasMany(d => d.ModifierGroups)
+                .WithOne(m => m.Dish)
+                .HasForeignKey(m => m.DishId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             

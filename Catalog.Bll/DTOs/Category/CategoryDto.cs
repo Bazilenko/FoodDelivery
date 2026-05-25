@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Catalog.Bll.DTOs.Category
+﻿namespace Catalog.Bll.DTOs.Category
 {
-    public class CategoryDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-    }
+    public record CategoryDto(int Id, string Name);
 }

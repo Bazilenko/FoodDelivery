@@ -2,8 +2,7 @@ using FluentAssertions;
 using Catalog.Dal.Entities;
 using Catalog.Dal.Repositories;
 using Catalog.Dal.Context;
-using Microsoft.EntityFrameworkCore;
-using Xunit;
+
 
 namespace Catalog.Dal.Tests;
 
@@ -19,83 +18,43 @@ public class RestaurantRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task GetByIdWithFullInfo_ExistingId_ReturnsRestaurantWithAddressesAndContacts()
+    public async Task GetWithFullDetailsAsync_ShouldReturnEverythingInOneQuery()
     {
         // Arrange
-        var restaurant = TestDataBuilder.CreateRestaurant(name: "Full Info Resto");
+        var cuisine = TestDataBuilder.CreateCuisine(id: 1, name: "Ukrainian");
+        var restaurant = TestDataBuilder.CreateRestaurant(id: 1, name: "Full Details Resto");
         
-        restaurant.Addresses.Clear();
-        restaurant.Contacts.Clear();
+        restaurant.Addresses.Add(TestDataBuilder.CreateAddress(restaurantId: 1, city: "Kyiv"));
+        restaurant.Contacts.Add(TestDataBuilder.CreateContact(restaurantId: 1, value: "0991112233"));
+        restaurant.WorkingHours.Add(TestDataBuilder.CreateWorkingHour(restaurantId: 1, day: 1));
+        restaurant.RestaurantCuisines.Add(new RestaurantCuisine { RestaurantId = 1, CuisineId = 1 });
 
-        restaurant.Addresses.Add(TestDataBuilder.CreateAddress(city: "Kyiv", street: "Main St", building: "123"));
-        restaurant.Contacts.Add(TestDataBuilder.CreateContact(value: "0991234567"));
-
+        await _context.Cuisines.AddAsync(cuisine);
         await _context.Restaurants.AddAsync(restaurant);
         await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
 
         // Act
-        var result = await _sut.GetByIdWithFullInfo(restaurant.Id);
+        var result = await _sut.GetWithFullDetailsAsync(restaurant.Id);
 
         // Assert
         result.Should().NotBeNull();
-        result!.Addresses.Should().HaveCount(1);
-        result.Addresses.First().BuildingNumber.Should().Be("123");
-        result.Contacts.Should().HaveCount(1);
+        result!.Addresses.Should().NotBeEmpty();
+        result.Contacts.Should().NotBeEmpty();
+        result.WorkingHours.Should().NotBeEmpty();
+        result.RestaurantCuisines.Should().NotBeEmpty();
+        result.RestaurantCuisines.First().Cuisine.Name.Should().Be("Ukrainian"); 
     }
 
     [Fact]
-    public async Task GetByIdWithFullInfo_ExistingIdWithoutDetails_ReturnsRestaurantWithEmptyCollections()
+    public async Task GetByCityAsync_ShouldFilterByAddressCollection()
     {
         // Arrange
-        var restaurant = TestDataBuilder.CreateRestaurant(name: "Empty Resto");
-        
-        restaurant.Addresses.Clear();
-        restaurant.Contacts.Clear();
+        var r1 = TestDataBuilder.CreateRestaurant(id: 1, name: "Kyiv Palace");
+        r1.Addresses.Add(TestDataBuilder.CreateAddress(restaurantId: 1, city: "Kyiv"));
 
-        await _context.Restaurants.AddAsync(restaurant);
-        await _context.SaveChangesAsync();
-
-        // Act
-        var result = await _sut.GetByIdWithFullInfo(restaurant.Id);
-
-        // Assert
-        result.Should().NotBeNull();
-        result!.Addresses.Should().BeEmpty();
-        result.Contacts.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetByRatingAsync_ShouldReturnOnlyMatchingRestaurants()
-    {
-        // Arrange
-        var restaurants = new List<Restaurant>
-        {
-            TestDataBuilder.CreateRestaurant(id: 0, name: "Good One", rating: 4.5m),
-            TestDataBuilder.CreateRestaurant(id: 0, name: "Another Good", rating: 4.0m),
-            TestDataBuilder.CreateRestaurant(id: 0, name: "Bad One", rating: 2.0m)
-        };
-        await _context.Restaurants.AddRangeAsync(restaurants);
-        await _context.SaveChangesAsync();
-
-        // Act
-        var result = await _sut.GetByRatingAsync(4.0m);
-
-        // Assert
-        result.Should().HaveCount(2);
-        result.Should().OnlyContain(r => r.Rating >= 4.0m);
-    }
-
-    [Fact]
-    public async Task GetByCityAsync_ShouldReturnRestaurantsInSpecificCity()
-    {
-        // Arrange
-        var r1 = TestDataBuilder.CreateRestaurant(name: "Kyiv Resto");
-        r1.Addresses.Clear();
-        r1.Addresses.Add(TestDataBuilder.CreateAddress(city: "Kyiv"));
-
-        var r2 = TestDataBuilder.CreateRestaurant(name: "Lviv Resto");
-        r2.Addresses.Clear();
-        r2.Addresses.Add(TestDataBuilder.CreateAddress(city: "Lviv"));
+        var r2 = TestDataBuilder.CreateRestaurant(id: 2, name: "Lviv Hub");
+        r2.Addresses.Add(TestDataBuilder.CreateAddress(restaurantId: 2, city: "Lviv"));
 
         await _context.Restaurants.AddRangeAsync(r1, r2);
         await _context.SaveChangesAsync();
@@ -105,60 +64,57 @@ public class RestaurantRepositoryTests : IDisposable
 
         // Assert
         result.Should().HaveCount(1);
-        result.First().Name.Should().Be("Kyiv Resto");
+        result.First().Name.Should().Be("Kyiv Palace");
+        result.First().Addresses.Should().NotBeEmpty();
     }
 
     [Fact]
-public async Task GetActiveAsync_WhenActiveEntitiesExist_ReturnsOnlyActive()
-{
-    var restaurants = new List<Restaurant>
+    public async Task GetPagedByCuisineAsync_ShouldReturnCorrectPageAndTotalCount()
     {
-        TestDataBuilder.CreateRestaurant(name: "Active 1", isActive: true),
-        TestDataBuilder.CreateRestaurant(name: "Active 2", isActive: true),
-        TestDataBuilder.CreateRestaurant(name: "Inactive", isActive: false)
-    };
-    await _context.Restaurants.AddRangeAsync(restaurants);
-    await _context.SaveChangesAsync();
+        // Arrange
+        int cuisineId = 5;
+        var cuisine = TestDataBuilder.CreateCuisine(id: cuisineId);
+        await _context.Cuisines.AddAsync(cuisine);
 
-    // Act
-    var result = await _sut.GetActiveAsync();
+        var restaurants = Enumerable.Range(1, 5).Select(i => 
+        {
+            var r = TestDataBuilder.CreateRestaurant(id: i, name: $"Resto {i}");
+            r.RestaurantCuisines.Add(new RestaurantCuisine { RestaurantId = i, CuisineId = cuisineId });
+            return r;
+        }).ToList();
 
-    // Assert
-    result.Should().HaveCount(2);
-    result.Should().OnlyContain(e => e.IsActive);
-}
+        await _context.Restaurants.AddRangeAsync(restaurants);
+        await _context.SaveChangesAsync();
 
-[Fact]
-public async Task GetActiveAsync_WhenOnlyInactiveEntitiesExist_ReturnsEmpty()
-{
-    // Arrange
-    var restaurants = new List<Restaurant>
+        // Act
+        var (items, totalCount) = await _sut.GetPagedByCuisineAsync(cuisineId, pageNumber: 1, pageSize: 3);
+
+        // Assert
+        totalCount.Should().Be(5);
+        items.Should().HaveCount(3);
+        items.First().RestaurantCuisines.First().Cuisine.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task GetByCuisineAsync_ShouldIncludeAddresses()
     {
-        TestDataBuilder.CreateRestaurant(name: "Inactive 1", isActive: false),
-        TestDataBuilder.CreateRestaurant(name: "Inactive 2", isActive: false)
-    };
-    await _context.Restaurants.AddRangeAsync(restaurants);
-    await _context.SaveChangesAsync();
+        // Arrange
+        int cuisineId = 10;
+        var r1 = TestDataBuilder.CreateRestaurant(id: 1);
+        r1.Addresses.Add(TestDataBuilder.CreateAddress(restaurantId: 1));
+        r1.RestaurantCuisines.Add(new RestaurantCuisine { RestaurantId = 1, CuisineId = cuisineId });
 
-    // Act
-    var result = await _sut.GetActiveAsync();
+        await _context.Restaurants.AddAsync(r1);
+        await _context.SaveChangesAsync();
+        _context.ChangeTracker.Clear();
 
-    // Assert
-    result.Should().BeEmpty(); 
-}
+        // Act
+        var result = await _sut.GetByCuisineAsync(cuisineId);
 
-
-[Fact]
-public async Task GetActiveAsync_WhenDatabaseIsEmpty_ReturnsEmpty()
-{
-    // Arrange
-
-    // Act
-    var result = await _sut.GetActiveAsync();
-
-    // Assert
-    result.Should().BeEmpty();
-}
+        // Assert
+        result.Should().NotBeEmpty();
+        result.First().Addresses.Should().NotBeEmpty();
+    }
 
     public void Dispose()
     {

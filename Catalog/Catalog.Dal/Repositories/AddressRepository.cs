@@ -12,24 +12,13 @@ namespace Catalog.Dal.Repositories
 {
     public class AddressRepository : GenericRepository<Address>, IAddressRepository
     {
-        private readonly MyDbContext _dbContext;
-        public AddressRepository(MyDbContext dbContext) : base(dbContext)
-        {
-            _dbContext = dbContext;
-        }
+        public AddressRepository(MyDbContext dbContext) : base(dbContext){ }
 
-        public async Task<IEnumerable<Address>> GetAddressesByCityAsync(string city)
+    public async Task<IEnumerable<Address>> GetByRestaurantAsync(int restaurantId, CancellationToken ct = default)
         {
-            return await _dbContext.Addresses
-                  .Where(a => a.City.ToLower() == city.ToLower())
-                  .ToListAsync();
-        }
-
-    public async Task<IEnumerable<Address>> GetAddressesByRestaurantIdAsync(int restaurantId)
-        {
-            return await _dbContext.Addresses
-                .Where(a => a.RestaurantId == restaurantId) 
-                .ToListAsync();
+            return await _dbSet
+            .Where(a => a.RestaurantId == restaurantId)
+            .ToListAsync(ct);
         }
     }
 }

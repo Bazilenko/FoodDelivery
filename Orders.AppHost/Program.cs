@@ -22,6 +22,12 @@ var ordersDb = sql.AddDatabase("ordersDb");
 
 var catalogDb = sql.AddDatabase("catalogDb");
 
+var identityDb = sql.AddDatabase("IdentityDb");
+
+var authService = builder.AddProject<AuthService>("auth-service")
+    .WithReference(identityDb)   
+    .WaitFor(identityDb);
+
 var deliveryService = builder.AddProject<Delivery_Api>("delivery-api")
     .WithReference(deliveryDb)
     .WaitFor(deliveryDb);
@@ -42,9 +48,11 @@ builder.AddProject<Gateway_Api>("gateway-api")
     .WaitFor(catalogService)
     .WaitFor(deliveryService)
     .WaitFor(ordersService)
+    .WaitFor(authService)
     .WithReference(deliveryService)
     .WithReference(catalogService)
-    .WithReference(ordersService);
+    .WithReference(ordersService)
+    .WithReference(authService);
 
 builder.AddProject<Aggreagator_Api>("aggreagator-api")
     .WithExternalHttpEndpoints()

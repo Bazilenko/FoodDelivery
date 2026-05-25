@@ -1,21 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Orders.Dal.Repository.Interfaces;
+﻿using Orders.Dal.Repository.Interfaces;
 
 namespace Orders.Dal.UoW.Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
-        public ICustomerRepository _customerRepository { get; }
-        public IOrderDishRepository _orderDishRepository { get; }
-        public IOrderRepository _orderRepository { get; }
-        public IPaymentRepository _paymentRepository { get; }
+        IOrderRepository Orders { get; }
+        IOrderDishRepository OrderDishes { get; }
+        IOrderDishOptionRepository OrderDishOptions { get; }
+        IPaymentRepository Payments { get; }
+        IOrderStatusHistoryRepository StatusHistory { get; }
+        IAnalyticsRepository Analytics {get;} 
 
-
+        void BeginTransaction();
         void Commit();
-        void Dispose();
+        void Rollback();
     }
 }
