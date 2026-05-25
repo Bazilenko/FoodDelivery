@@ -1,20 +1,22 @@
 using System.Data;
 using Microsoft.Data.SqlClient;
 using Orders.Dal.Context.Interfaces;
+using Microsoft.Extensions.Configuration;
 
-namespace Orders.Dal.Context{
-public class DapperContext : IDapperContext
+namespace Orders.Dal.Context
+{
+    public class DapperContext : IDapperContext
     {
         private readonly string _connectionString;
         private IDbConnection _connection;
         private IDbTransaction _transaction;
 
-        public DapperContext(string connectionString)
-        {
-            _connectionString = connectionString;
-        }
+        public DapperContext(IConfiguration configuration)
+{
+        _connectionString = configuration.GetConnectionString("OrdersDb");
+}
 
-        public IDbConnection Connection 
+        public IDbConnection Connection
             => _connection ??= new SqlConnection(_connectionString);
 
         public IDbTransaction Transaction => _transaction;
@@ -32,16 +34,19 @@ public class DapperContext : IDapperContext
             _transaction = null;
         }
 
-        public void Rollback()
-        {
-            _transaction?.Rollback();
-            _transaction = null;
-        }
 
-        public void Dispose()
+        public void CloseConnection()
         {
-            _transaction?.Dispose();
-            _connection?.Dispose();
+            if (Transaction != null)
+            {
+                Transaction.Dispose();
+                _transaction = null;
+            }
+
+            if (Connection != null && Connection.State != ConnectionState.Closed)
+            {
+                Connection.Close();
+            }
         }
     }
-} 
+}

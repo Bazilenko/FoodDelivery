@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Orders.Dal.Entities;
+﻿using Orders.Dal.Entities;
 
 namespace Orders.Dal.Repository.Interfaces
 {
     public interface IPaymentRepository : IGenericRepository<Payment>
     {
-        Task<Payment> GetByOrderIdAsync(int orderId);
-        Task<Payment> GetByPaymentMethodAsync(string paymentMethod);
+        Task<Payment?> GetByTransactionIdAsync(string transactionId);
+        Task<Payment?> GetByOrderIdAsync(int orderId);
     }
 }

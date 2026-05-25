@@ -1,24 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Dommel;
+﻿using Orders.Dal.Enums;
 
 namespace Orders.Dal.Entities
 {
-    public class Order
+    public class Order : BaseEntity
     {
-        public int Id { get; set; }
         public int CustomerId { get; set; }
         public int RestaurantId { get; set; }
-        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string Status { get; set; }
-        public decimal TotalAmount { get; set; }
-        [Ignore]
-        public virtual ICollection<OrderDish?> Dishes { get; set; }
-        
+        public string DeliveryAddress { get; set; } = string.Empty;
 
+        public string? Notes { get; set; }
+        public decimal DeliveryFee { get; set; }
+        public decimal TotalAmount { get; set; }
+
+        public OrderStatus Status { get; set; }
+
+        public ICollection<OrderDish> OrderDishes { get; set; } = [];
+        public ICollection<OrderStatusHistory> StatusHistory { get; set; } = [];
+        public Payment? Payment { get; set; }
     }
 }

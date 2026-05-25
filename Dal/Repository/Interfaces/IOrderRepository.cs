@@ -1,17 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Orders.Dal.Enums;
 using Orders.Dal.Entities;
 
 namespace Orders.Dal.Repository.Interfaces
 {
-    public interface IOrderRepository : IGenericRepository<Order>
+    public interface IOrderRepository : IGenericRepository<Entities.Order>
     {
-        Task<IEnumerable<Order>> GetByCustomerIdAsync(int customerId);
-        Task<Order?> GetWithItemsByIdAsync(int orderId);
-        Task<decimal> GetIncomeByDate(DateTime fromDate, DateTime toDate);
-
+        Task<IEnumerable<Entities.Order>> GetOrdersByCustomerIdAsync(int customerId);
+        Task<Entities.Order?> GetFullOrderDetailsAsync(int orderId);
+        Task UpdateStatusAsync(int orderId, OrderStatus status);
+        Task<decimal> GetOrderTotalAmountAsync(int orderId);
+        Task<decimal> GetTotalRevenueAsync(int restaurantId, DateTime from, DateTime to);
+        Task<int> GetOrdersCountAsync(int restaurantId, DateTime from, DateTime to);
+        Task<IEnumerable<dynamic>> GetDailyRevenueAsync(int restaurantId, DateTime from, DateTime to);
+        Task<IEnumerable<Entities.Order>> GetOrdersByRestaurantIdAsync(int restaurantId);
     }
 }
