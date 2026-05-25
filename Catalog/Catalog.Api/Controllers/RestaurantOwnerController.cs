@@ -10,7 +10,7 @@ namespace Catalog.Api.Controllers
     /// All endpoints require the "RestaurantOwner" role.
     /// </summary>
     [ApiController]
-    [Route("api/owner/restaurant")]
+    [Route("catalog/owner/restaurant")]
     [Authorize(Roles = "RestaurantOwner")]
     [Produces("application/json")]
     public class RestaurantOwnerController : ControllerBase

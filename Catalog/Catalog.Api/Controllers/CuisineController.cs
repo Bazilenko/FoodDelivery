@@ -13,7 +13,7 @@ namespace Catalog.Api.Controllers
     /// Admin write operations require the "Admin" role.
     /// </summary>
     [ApiController]
-    [Route("api/cuisines")]
+    [Route("catalog/cuisines")]
     [Produces("application/json")]
     public class CuisinesController : ControllerBase
     {

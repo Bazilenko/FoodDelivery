@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Catalog.Api.Controllers
 {
     [ApiController]
-    [Route("api/owner/dishes/{dishId:int}/modifier-groups")]
+    [Route("catalog/owner/dishes/{dishId:int}/modifier-groups")]
     [Authorize(Roles = "RestaurantOwner")]
     [Produces("application/json")]
     public class ModifierGroupsController : ControllerBase

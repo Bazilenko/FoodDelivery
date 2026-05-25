@@ -8,7 +8,7 @@ namespace Catalog.Api.Controllers
     /// Single dish detail with modifier groups — opened by clicking a dish card.
     /// </summary>
     [ApiController]
-    [Route("api/dishes")]
+    [Route("catalog/dishes")]
     [Produces("application/json")]
     public class DishesPublicController : ControllerBase
     {

@@ -9,7 +9,7 @@ namespace Catalog.Api.Controllers
     /// Public restaurant profile and menu — no authentication required.
     /// </summary>
     [ApiController]
-    [Route("api/restaurants")]
+    [Route("catalog/restaurants")]
     [Produces("application/json")]
     public class RestaurantsPublicController : ControllerBase
     {

@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Catalog.Api.Controllers
 {
     [ApiController]
-    [Route("api/owner/contacts")]
+    [Route("catalog/owner/contacts")]
     [Authorize(Roles = "RestaurantOwner")]
     [Produces("application/json")]
     public class ContactsController : ControllerBase

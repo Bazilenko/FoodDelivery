@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Catalog.Api.Controllers
 {
     [ApiController]
-    [Route("api/owner/working-hours")]
+    [Route("catalog/owner/working-hours")]
     [Authorize(Roles = "RestaurantOwner")]
     [Produces("application/json")]
     public class WorkingHoursController : ControllerBase
@@ -38,16 +38,13 @@ namespace Catalog.Api.Controllers
             return CreatedAtAction(nameof(GetByDay), new { dayOfWeek = created.DayOfWeek }, created);
         }
 
-        [HttpPut("{id:int}")]
+        [HttpPut]
         [ProducesResponseType(typeof(WorkingHourDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<WorkingHourDto>> Update(
-            int id, [FromBody] WorkingHourUpdateDto dto, CancellationToken ct)
+        public async Task<ActionResult<List<WorkingHourDto>>> Update( [FromBody] WorkingHoursUpdateDto dto, CancellationToken ct)
         {
-            if (id != dto.Id)
-                return BadRequest("Route id does not match body id.");
-
-            return Ok(await _service.UpdateAsync(dto, ct));
+            var result = await _service.UpdateAsync(dto);
+            return Ok(result);
         }
 
         [HttpDelete("{id:int}")]

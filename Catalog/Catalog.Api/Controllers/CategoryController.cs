@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Catalog.Api.Controllers
 {
     [ApiController]
-    [Route("api/owner/categories")]
+    [Route("catalog/owner/categories")]
     [Authorize(Roles = "RestaurantOwner")]
     [Produces("application/json")]
     public class CategoriesController : ControllerBase
@@ -41,10 +41,11 @@ namespace Catalog.Api.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CategoryDto>> Update(
-            int id, [FromBody] CategoryUpdateDto dto, CancellationToken ct)
+            int id,
+            [FromBody] CategoryUpdateDto dto,
+            CancellationToken ct)
         {
-            if (id != dto.Id)
-                return BadRequest("Route id does not match body id.");
+            dto.Id = id;
 
             return Ok(await _service.UpdateAsync(dto, ct));
         }
