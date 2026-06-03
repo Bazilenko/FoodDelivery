@@ -55,19 +55,23 @@ namespace Catalog.Bll.Services
         {
             var restaurantId = AuthHelper.GetRestaurantIdFromToken(_httpContextAccessor);
 
+            var existingHours = await _uow.WorkingHours.GetByRestaurantAsync(restaurantId);
             var results = new List<WorkingHour>();
 
             foreach (var hourDto in dto.WorkingHours)
             {
+                WorkingHour? existing = null;
+
                 if (hourDto.Id.HasValue && hourDto.Id.Value > 0)
                 {
-                    var existing = await _uow.WorkingHours.GetByIdAsync(hourDto.Id.Value);
-                    if (existing != null && existing.RestaurantId == restaurantId)
-                    {
-                        _mapper.Map(hourDto, existing);
-                        await _uow.WorkingHours.UpdateAsync(existing);
-                        results.Add(existing);
-                    }
+                    existing = existingHours.FirstOrDefault(h => h.Id == hourDto.Id.Value);
+                }
+
+                if (existing != null)
+                {
+                    _mapper.Map(hourDto, existing);
+                    await _uow.WorkingHours.UpdateAsync(existing);
+                    results.Add(existing);
                 }
                 else
                 {

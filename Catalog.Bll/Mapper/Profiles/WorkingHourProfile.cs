@@ -35,6 +35,15 @@ namespace Catalog.Bll.Mapper.Profiles
                 .ForMember(dest => dest.Restaurant, opt => opt.Ignore())
                 .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
+                CreateMap<WorkingHourDto, WorkingHour>()
+                .IgnoreAuditProperties() 
+                .ForMember(dest => dest.Id, opt => opt.Ignore()) 
+                .ForMember(dest => dest.RestaurantId, opt => opt.Ignore())
+                .ForMember(dest => dest.Restaurant, opt => opt.Ignore())
+                .ForMember(dest => dest.OpeningTime, opt => opt.MapFrom(src => src.OpeningTime))
+                .ForMember(dest => dest.ClosingTime, opt => opt.MapFrom(src => src.ClosingTime))
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
             
         }
     }
