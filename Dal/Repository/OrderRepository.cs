@@ -68,6 +68,20 @@ namespace Orders.Dal.Repository
 
             return await MapOrderWithDetails(sql, new { RestaurantId = restaurantId });
         }
+
+        public async Task<Order?> GetOrderByIdForRestaurantAsync(int orderId, int restaurantId)
+        {
+            const string sql = @"
+        SELECT o.*, od.*, odo.*
+        FROM Orders o
+        LEFT JOIN OrderDishes od ON o.Id = od.OrderId
+        LEFT JOIN OrderDishOptions odo ON od.Id = odo.OrderDishId
+        WHERE o.Id = @OrderId AND o.RestaurantId = @RestaurantId";
+
+            var orders = await MapOrderWithDetails(sql, new { OrderId = orderId, RestaurantId = restaurantId });
+            return orders.FirstOrDefault();
+        }
+
         public async Task<Entities.Order?> GetFullOrderDetailsAsync(int orderId)
         {
             const string sql = @"
