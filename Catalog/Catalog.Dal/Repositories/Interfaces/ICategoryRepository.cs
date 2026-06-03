@@ -7,6 +7,8 @@ namespace Catalog.Dal.Repositories.Interfaces
         Task<IEnumerable<Category>> GetByRestaurantAsync(int restaurantId, CancellationToken ct = default);
         Task<Category?> GetWithDishesAsync(int categoryId, CancellationToken ct = default);
 
-        
+        Task<IEnumerable<Category>> GetMenuByRestaurantIdAsync(
+            int restaurantId,
+            CancellationToken ct = default);
     }
 }

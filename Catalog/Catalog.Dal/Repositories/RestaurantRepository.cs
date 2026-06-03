@@ -34,6 +34,10 @@ namespace Catalog.Dal.Repositories
             return await _dbSet
                 .Where(r => r.RestaurantCuisines.Any(rc => rc.CuisineId == cuisineId))
                 .Include(r => r.Addresses)
+                .Include(r => r.WorkingHours)
+                .Include(r => r.RestaurantCuisines)
+                    .ThenInclude(rc => rc.Cuisine)
+                .AsNoTracking()
                 .ToListAsync(ct);
         }
 
@@ -45,7 +49,7 @@ namespace Catalog.Dal.Repositories
         {
             var query = _dbSet
                 .Where(r => r.RestaurantCuisines.Any(rc => rc.CuisineId == cuisineId))
-                .OrderBy(r => r.Name); 
+                .OrderBy(r => r.Name);
 
             var totalCount = await query.CountAsync(ct);
 
