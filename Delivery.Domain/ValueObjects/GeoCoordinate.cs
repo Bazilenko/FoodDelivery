@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Domain.Common;
+﻿using Delivery.Domain.Common;
 using Delivery.Domain.Exceptions;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace Delivery.Domain.ValueObjects
 {
@@ -33,18 +27,21 @@ namespace Delivery.Domain.ValueObjects
 
         public double DistanceTo(GeoCoordinate other)
         {
-            const double EarthRadiusKm = 6371;
-            double dLat = DegreesToRadians(other.Latitude - Latitude);
-            double dLon = DegreesToRadians(other.Longitude - Longitude);
-
-            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                       Math.Cos(DegreesToRadians(Latitude)) * Math.Cos(DegreesToRadians(other.Latitude)) *
-                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
-            return EarthRadiusKm * c;
+            var d1 = Latitude * (Math.PI / 180.0);
+            var num1 = Longitude * (Math.PI / 180.0);
+            var d2 = other.Latitude * (Math.PI / 180.0);
+            var num2 = other.Longitude * (Math.PI / 180.0);
+            var d3 = d2 - d1;
+            var num3 = num2 - num1;
+            
+            var a = Math.Sin(d3 / 2.0) * Math.Sin(d3 / 2.0) +
+                    Math.Cos(d1) * Math.Cos(d2) *
+                    Math.Sin(num3 / 2.0) * Math.Sin(num3 / 2.0);
+            
+            var c = 2.0 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1.0 - a));
+            const double earthRadius = 6371.0; // km
+            
+            return earthRadius * c;
         }
-
-        private static double DegreesToRadians(double deg) => deg * (Math.PI / 180);
     }
 }

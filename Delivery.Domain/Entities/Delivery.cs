@@ -16,23 +16,43 @@ namespace Delivery.Domain.Entities
         public Money? DeliveryCost { get; private set; }
         public DeliveryStatus Status { get; private set; }
 
+        public string RestaurantName { get; private set; }
+        public string RestaurantAddress { get; private set; }
+        public string DeliveryAddress { get; private set; }
+        public decimal DeliveryFee { get; private set; }
+        public DateTime? PickedUpAt { get; set; }
+        public DateTime? DeliveredAt { get; set; }
+
         private Delivery() { }
 
-        public Delivery(int orderId, GeoCoordinate pickup, GeoCoordinate dropoff)
+        public Delivery(
+           int orderId,
+           GeoCoordinate pickup,
+           GeoCoordinate dropoff,
+           string restaurantName,
+           string restaurantAddress,
+           string deliveryAddress,
+           decimal deliveryFee)
         {
             if (orderId <= 0)
                 throw new DomainException("OrderId must be positive.", "InvalidValue");
 
             OrderId = orderId;
-            PickUpLocation = pickup ?? throw new DomainException("Pickup location cannot be null.", "InvalidValue");
-            DropOffLocation = dropoff ?? throw new DomainException("Dropoff location cannot be null.", "InvalidValue");
+            PickUpLocation = pickup ?? throw new DomainException("Pickup cannot be null.", "InvalidValue");
+            DropOffLocation = dropoff ?? throw new DomainException("Dropoff cannot be null.", "InvalidValue");
+            RestaurantName = restaurantName;
+            RestaurantAddress = restaurantAddress;
+            DeliveryAddress = deliveryAddress;
+            DeliveryFee = deliveryFee;
             Status = DeliveryStatus.Pending;
         }
+
 
         public void AssignWindow(DeliveryWindow window)
         {
             if (Status != DeliveryStatus.Pending)
-                throw new DomainException("Can only assign window while delivery is Pending.", "InvalidStatus");
+                throw new DomainException(
+                    $"Cannot assign window in status '{Status}'.", "InvalidStatus");
 
             TimeWindow = window ?? throw new DomainException("Window cannot be null.", "InvalidValue");
             Touch();
@@ -44,7 +64,8 @@ namespace Delivery.Domain.Entities
                 throw new DomainException("Courier already assigned.", "CourierException");
 
             if (Status != DeliveryStatus.Pending)
-                throw new DomainException("Can only assign courier while delivery is Pending.", "InvalidStatus");
+                throw new DomainException(
+                    $"Cannot assign courier in status '{Status}'.", "InvalidStatus");
 
             Courier = courier ?? throw new DomainException("Courier cannot be null.", "CourierException");
             Touch();
@@ -64,23 +85,27 @@ namespace Delivery.Domain.Entities
         {
             if (Status != DeliveryStatus.Pending)
                 throw new DomainException(
-                    $"Cannot mark as InTransit from status '{Status}'.", "InvalidStatus");
+                    $"Cannot mark InTransit from '{Status}'. Must be Pending.", "InvalidStatus");
 
             if (Courier == null)
-                throw new DomainException("Cannot start delivery without an assigned courier.", "CourierException");
+                throw new DomainException(
+                    "Cannot start delivery without an assigned courier.", "CourierException");
 
             Status = DeliveryStatus.InTransit;
+            PickedUpAt = DateTime.UtcNow;
             Touch();
         }
+
 
 
         public void MarkDelivered()
         {
             if (Status != DeliveryStatus.InTransit)
                 throw new DomainException(
-                    $"Cannot mark as Delivered from status '{Status}'. Must be InTransit first.", "InvalidStatus");
+                    $"Cannot mark Delivered from '{Status}'. Must be InTransit.", "InvalidStatus");
 
             Status = DeliveryStatus.Delivered;
+            DeliveredAt = DateTime.UtcNow;
             Touch();
         }
 
