@@ -8,12 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.*" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Delivery.Application\Delivery.Application.csproj" />
-    <ProjectReference Include="..\Delivery.Domain\Delivery.Domain.csproj" />
     <ProjectReference Include="..\Delivery.Infrastructure\Delivery.Infrastructure.csproj" />
     <ProjectReference Include="..\Orders.ServiceDefaults\Orders.ServiceDefaults.csproj" />
   </ItemGroup>
