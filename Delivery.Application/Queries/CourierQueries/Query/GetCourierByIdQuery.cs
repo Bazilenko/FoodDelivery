@@ -1,16 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Application.Interfaces.Queries;
-using Delivery.Domain.Entities;
+﻿using MediatR;
+using Delivery.Application.DTOs;
 
 namespace Delivery.Application.Queries.CourierQueries.Query
 {
-    public class GetCourierByIdQuery : IQuery<Courier?>
-    {
-        public string courierId { get; init; } = default!;
-
-    }
+    public record GetCourierByIdQuery(string CourierId) : IRequest<CourierDto?>;
 }

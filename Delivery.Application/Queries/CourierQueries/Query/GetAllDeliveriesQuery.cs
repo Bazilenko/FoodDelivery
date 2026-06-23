@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Application.Interfaces.Queries;
+﻿using MediatR;
+using Delivery.Application.DTOs;
 
 namespace Delivery.Application.Queries.CourierQueries.Query
 {
-    public class GetAllDeliveriesQuery : IQuery<List<Domain.Entities.Delivery?>>
-    {
-
-    }
+    public record GetAllDeliveriesQuery : IRequest<IEnumerable<DeliveryDto>>;
 }

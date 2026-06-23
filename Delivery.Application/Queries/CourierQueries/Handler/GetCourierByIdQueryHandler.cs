@@ -1,27 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Application.Interfaces.Queries;
+﻿using MediatR;
+using Delivery.Application.DTOs;
+using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Helpers;
 using Delivery.Application.Queries.CourierQueries.Query;
-using Delivery.Domain.Entities;
-using Delivery.Domain.Interfaces.Services;
 
 namespace Delivery.Application.Queries.CourierQueries.Handler
 {
-    public class GetCourierByIdQueryHandler : IQueryHandler<GetCourierByIdQuery, Courier?>
+    public class GetCourierByIdQueryHandler : IRequestHandler<GetCourierByIdQuery, CourierDto?>
     {
-        private readonly ICourierService _service;
+        private readonly ICourierRepository _repo;
 
-        public GetCourierByIdQueryHandler(ICourierService service)
-        {
-            _service = service;
-        }
+        public GetCourierByIdQueryHandler(ICourierRepository repo) => _repo = repo;
 
-        public async Task<Courier?> Handle(GetCourierByIdQuery req, CancellationToken ct)
+        public async Task<CourierDto?> Handle(GetCourierByIdQuery query, CancellationToken ct)
         {
-            return await _service.GetCourierByIdAsync(req.courierId);
+            var courier = await _repo.GetByIdAsync(query.CourierId, ct);
+            return courier?.ToDto();
         }
     }
+
 }

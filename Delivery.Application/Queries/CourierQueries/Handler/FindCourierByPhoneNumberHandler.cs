@@ -1,30 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Application.Interfaces.Queries;
+﻿using MediatR;
+using Delivery.Application.DTOs;
 using Delivery.Application.Queries.CourierQueries.Query;
-using Delivery.Domain.Entities;
-using Delivery.Domain.Interfaces.Repositories;
-using Delivery.Domain.Interfaces.Services;
+using Delivery.Application.Interfaces.Repositories;
+using Delivery.Domain.Enums;
+using Delivery.Application.Helpers;
 
 namespace Delivery.Application.Queries.CourierQueries.Handler
 {
-    public class FindCourierByPhoneNumberHandler : IQueryHandler<FindCourierByPhoneNumberQuery, Courier?>
+    public class FindCourierByPhoneNumberQueryHandler : IRequestHandler<FindCourierByPhoneNumberQuery, CourierDto?>
     {
-        private readonly ICourierService _service;
+        private readonly ICourierRepository _repo;
 
-        public FindCourierByPhoneNumberHandler(ICourierService service)
+        public FindCourierByPhoneNumberQueryHandler(ICourierRepository repo) => _repo = repo;
+
+        public async Task<CourierDto?> Handle(FindCourierByPhoneNumberQuery query, CancellationToken ct)
         {
-            _service = service;
-        }
-
-        public async Task<Courier?> Handle(FindCourierByPhoneNumberQuery req, CancellationToken ct)
-        {
-            return await _service.FindCourierByPhoneAsync(req.PhoneNumber, ct);
-
+            var courier = await _repo.GetByPhoneNumberAsync(query.PhoneNumber, ct);
+            return courier?.ToDto();
         }
     }
 }
