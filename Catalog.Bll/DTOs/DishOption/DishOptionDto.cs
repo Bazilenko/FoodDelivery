@@ -7,4 +7,5 @@ namespace Catalog.Bll.DTOs.DishOption
         public decimal Price { get; set; }
         public bool IsAvailable { get; set; }
     }
+
 }

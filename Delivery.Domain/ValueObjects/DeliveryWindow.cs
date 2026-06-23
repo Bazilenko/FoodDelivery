@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Domain.Common;
+﻿using Delivery.Domain.Common;
 using Delivery.Domain.Exceptions;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace Delivery.Domain.ValueObjects
 {

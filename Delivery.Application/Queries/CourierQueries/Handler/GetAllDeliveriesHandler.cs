@@ -1,27 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Application.Interfaces.Queries;
+﻿using MediatR;
+using Delivery.Application.DTOs;
 using Delivery.Application.Queries.CourierQueries.Query;
-using Delivery.Domain.Interfaces.Services;
+using Delivery.Application.Interfaces.Repositories;
+using Delivery.Application.Helpers;
 
 namespace Delivery.Application.Queries.CourierQueries.Handler
 {
-    public class GetAllDeliveriesHandler : IQueryHandler<GetAllDeliveriesQuery, List<Domain.Entities.Delivery>>
+    public class GetAllDeliveriesQueryHandler : IRequestHandler<GetAllDeliveriesQuery, IEnumerable<DeliveryDto>>
     {
-        public IDeliveryService _service;
+        private readonly IDeliveryRepository _repo;
 
-        public GetAllDeliveriesHandler(IDeliveryService service)
-        {
-            _service = service;
-        }
+        public GetAllDeliveriesQueryHandler(IDeliveryRepository repo) => _repo = repo;
 
-        public async Task<List<Domain.Entities.Delivery>> Handle(GetAllDeliveriesQuery request, CancellationToken cancellationToken)
+        public async Task<IEnumerable<DeliveryDto>> Handle(GetAllDeliveriesQuery _, CancellationToken ct)
         {
-            var deliveries = await _service.GetAllDeliveriesAsync(cancellationToken);
-            return deliveries.ToList();
+            var all = await _repo.GetByTimeRangeAsync(DateTime.UtcNow.AddYears(-1), DateTime.UtcNow.AddDays(1), ct);
+            return all.Select(d => d.ToDto());
         }
     }
 }

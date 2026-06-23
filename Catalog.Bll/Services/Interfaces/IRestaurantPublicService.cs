@@ -10,6 +10,7 @@ namespace Catalog.Bll.Services.Interfaces
  
         /// <summary>Full menu: categories each containing their available dishes.</summary>
         Task<IEnumerable<CategoryWithDishesDto>> GetMenuAsync(int restaurantId, CancellationToken ct = default);
+        Task<IEnumerable<RestaurantCardDto>> GetByCuisineAsync(int cuisineId, CancellationToken ct);
 
     }
 }

@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Domain.Entities;
-using Delivery.Domain.Enums;
-using Delivery.Domain.Interfaces.Repositories;
+﻿using Delivery.Domain.Entities;
+using Delivery.Application.DTOs;
+using Delivery.Application.Interfaces.Repositories;
 using Delivery.Domain.Interfaces.Services;
-using Delivery.Domain.Exceptions;
 
 namespace Delivery.Application.Services
 {
@@ -22,111 +16,60 @@ namespace Delivery.Application.Services
             _deliveryRepository = deliveryRepository;
         }
 
-        public async Task<Courier> CreateCourierAsync(string name, string email, string phoneNumber, CancellationToken ct = default)
+        public async Task<Courier> GetCourierByIdAsync(string id, CancellationToken ct = default)
         {
-            var courier = new Courier(name, email, phoneNumber);
+            return await _courierRepository.GetByIdAsync(id, ct)
+                ?? throw new Exception($"Courier not found: {id}");
+        }
 
+        public async Task<Courier> CreateCourierAsync(string name, string email, string phoneNumber, string userId, CancellationToken ct = default)
+        {
+            var courier = new Courier(name, email, phoneNumber, userId);
             await _courierRepository.AddAsync(courier, ct);
-
             return courier;
+        }
+
+        public async Task UpdateCourierAsync(string id, string name, string email, string phoneNumber, CancellationToken ct = default)
+        {
+            var courier = await GetCourierByIdAsync(id, ct);
+            courier.Update(name, email, phoneNumber);
+            await _courierRepository.SaveAsync(courier, ct);
         }
 
         public async Task DeleteCourierAsync(string id, CancellationToken ct = default)
         {
-            var courier = await _courierRepository.GetByIdAsync(id, ct);
-
-            if (courier is null)
-                throw new CourierNotFoundException(id);
-
-            var activeDeliveries = await _deliveryRepository.GetByCourierAndStatusAsync(id, DeliveryStatus.Pending, ct);
-
-            if (activeDeliveries.Any())
-                throw new DomainException("Cannot delete courier with active deliveries!", "ActiveDeliveries");
-
             await _courierRepository.DeleteAsync(id, ct);
         }
 
-        public async Task<Courier?> FindCourierByPhoneAsync(string phoneNumber, CancellationToken ct = default)
+        public async Task<CourierStatsDto> GetStatsAsync(string courierId, CancellationToken ct = default)
         {
-            var courier = await _courierRepository.GetByPhoneNumberAsync(phoneNumber, ct);
-
-            if (courier is null)
-                throw new DomainException($"Courier with phone number {phoneNumber} not found!", "NotFound");
-
-            return courier;
-        }
-
-        public async Task<int> GetActiveCourierDeliveryCountAsync(string courierId, CancellationToken ct = default)
-        {
-            var courier = await _courierRepository.GetByIdAsync(courierId, ct);
-
-            if (courier is null)
-                throw new CourierNotFoundException(courierId);
-
-            var count = await _deliveryRepository.GetActiveDeliveryCountByCourierAsync(courierId, ct);
-
-            return count;
-        }
-
-        public async Task<IEnumerable<Courier>> GetAllCouriersAsync(CancellationToken ct = default)
-        {
-            return await _courierRepository.GetAllAsync(ct);
-        }
-
-        public async Task<IEnumerable<Courier>> GetAvailableCouriersAsync(CancellationToken ct = default)
-        {
-            const int MAX_ACTIVE_DELIVERY_COUNT = 5;
-
-            var couriers = await _courierRepository.GetAllAsync(ct);
-            var availableCouriers = new List<Courier>();
-
-            foreach(var courier in couriers)
+            var deliveries = await _deliveryRepository.GetByCourierIdAsync(courierId, ct);
+            
+            var completed = deliveries.Where(d => d.Status == Domain.Enums.DeliveryStatus.Delivered).ToList();
+            var today = DateTime.UtcNow.Date;
+            var todayDeliveries = completed.Where(d => d.DeliveredAt?.Date == today).ToList();
+            
+            var avgTime = 0.0;
+            if (completed.Any())
             {
-                var activeDelivryCount = await _deliveryRepository.GetActiveDeliveryCountByCourierAsync(courier.Id, ct);
-
-                if (MAX_ACTIVE_DELIVERY_COUNT > activeDelivryCount)
-                    availableCouriers.Add(courier);
+                var times = completed
+                    .Where(d => d.PickedUpAt.HasValue && d.DeliveredAt.HasValue)
+                    .Select(d => (d.DeliveredAt.Value - d.PickedUpAt.Value).TotalMinutes)
+                    .ToList();
+                
+                if (times.Any())
+                    avgTime = Math.Round(times.Average());
             }
-
-            return availableCouriers;
-        }
-
-        public async Task<Courier?> GetCourierByIdAsync(string id, CancellationToken ct = default)
-        {
-            var courier = await _courierRepository.GetByIdAsync(id, ct);
-
-            if (courier is null)
-                throw new CourierNotFoundException(id);
-
-            return courier;
-        }
-
-        public async Task<IEnumerable<Domain.Entities.Delivery>> GetCourierDeliveriesAsync(string courierId, DeliveryStatus status, CancellationToken ct = default)
-        {
-            var courier = _courierRepository.GetByIdAsync(courierId, ct);
-
-            if (courier is null)
-                throw new CourierNotFoundException(courierId);
-
-            if (status != null)
-                await _deliveryRepository.GetByCourierAndStatusAsync(courierId, status, ct);
-            return await _deliveryRepository.GetByCourierIdAsync(courierId, ct);
-        }
-
-        public async Task<Courier> UpdateCourierAsync(string id, string? name, string? email, string? phoneNumber, CancellationToken ct = default)
-        {
-            var courier = await _courierRepository.GetByIdAsync(id, ct);
-
-            if (courier is null)
-                throw new CourierNotFoundException(id);
-
-            typeof(Courier).GetProperty(nameof(Courier.Name))?.SetValue(courier, name);
-            typeof(Courier).GetProperty(nameof(Courier.Email))?.SetValue(courier, email);
-            typeof(Courier).GetProperty(nameof(Courier.PhoneNumber))?.SetValue(courier, email);
-
-            await _courierRepository.UpdateAsync(courier, ct);
-
-            return courier;
+            
+            return new CourierStatsDto
+            {
+                TotalDeliveries = completed.Count,
+                TotalEarned = completed.Sum(d => d.DeliveryFee),
+                ActiveDeliveries = deliveries.Count(d => d.Status == Domain.Enums.DeliveryStatus.InTransit),
+                AverageDeliveryTimeMinutes = avgTime,
+                TodayDeliveries = todayDeliveries.Count,
+                TodayEarned = todayDeliveries.Sum(d => d.DeliveryFee)
+            };
         }
     }
 }

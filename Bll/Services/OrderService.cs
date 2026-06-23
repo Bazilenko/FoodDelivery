@@ -4,8 +4,10 @@ using Orders.Dal.Enums;
 using Orders.Dal.UoW.Interfaces;
 using Orders.Bll.DTOs.Order;
 using Orders.Bll.Services.Interfaces;
+using Bll.DTOs.Order;
 
 namespace Orders.Bll.Services;
+
 public class OrderService : IOrderService
 {
     private readonly IUnitOfWork _uow;
@@ -39,6 +41,17 @@ public class OrderService : IOrderService
 
         return _mapper.Map<OrderResponseDto>(order);
     }
+
+    public async Task<OrderSummaryDto?> GetOrderByIdForRestaurantAsync(int orderId, int restaurantId)
+    {
+        var order = await _uow.Orders.GetFullOrderDetailsAsync(orderId);
+
+        if (order == null || order.RestaurantId != restaurantId)
+            return null;
+
+        return _mapper.Map<OrderSummaryDto>(order);
+    }
+
 
     public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto dto, int customerId)
     {
@@ -111,7 +124,7 @@ public class OrderService : IOrderService
             {
                 OrderId = orderId,
                 Status = dto.Status,
-                Comment = dto.Comment ?? $"Статус змінено на {dto.Status}"
+                Comment = dto.Comment ?? $"Status changed to {dto.Status}"
             });
 
             _uow.Commit();

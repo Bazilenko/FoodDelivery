@@ -1,54 +1,87 @@
 ﻿using Delivery.Application.Commands.CourierCommands.Command;
-using Delivery.Application.Commands.CourierCommands.Commands;
+using System.Security.Claims;
+using Delivery.Application.DTOs;
 using Delivery.Application.Queries.CourierQueries.Query;
-using Delivery.Domain.Exceptions;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Delivery.Api.Controllers
 {
-    public class CourierController : BaseController
+    [ApiController]
+    [Route("api/couriers")]
+    [Authorize]
+    public class CourierController : ControllerBase
     {
-        public CourierController(IMediator mediator) : base(mediator)
+        private readonly IMediator _mediator;
+
+        public CourierController(IMediator mediator)
         {
+            _mediator = mediator;
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetCourierByIdQuery(string id, CancellationToken ct)
+        [ProducesResponseType(typeof(CourierDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetById(string id, CancellationToken ct)
         {
-            var res = await _mediator.Send(new GetCourierByIdQuery { courierId = id }, ct);
+            var result = await _mediator.Send(new GetCourierByIdQuery(id), ct);
+            if (result is null) return NotFound();
+            return Ok(result);
+        }
 
-            if (res == null)
-                throw new CourierNotFoundException(id);
-            return Ok(res);
+        [HttpGet("by-phone/{phoneNumber}")]
+        [ProducesResponseType(typeof(CourierDto), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetByPhoneNumber(string phoneNumber, CancellationToken ct)
+        {
+            var result = await _mediator.Send(new FindCourierByPhoneNumberQuery(phoneNumber), ct);
+            return Ok(result);
         }
 
         [HttpPost]
-        public async Task<IActionResult>AddCourier([FromBody]CreateCourierCommand cmd, CancellationToken ct)
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> Create([FromBody] CreateCourierCommand cmd, CancellationToken ct)
         {
-            var res = await _mediator.Send(cmd, ct);
-            return Ok(res);
+            var id = await _mediator.Send(cmd, ct);
+            return CreatedAtAction(nameof(GetById), new { id }, id);
         }
 
-        [HttpPut]
-        public async Task<IActionResult> UpdateCourier([FromBody] UpdateCourierCommand cmd, CancellationToken ct)
+        [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Update(string id, [FromBody] UpdateCourierRequest request, CancellationToken ct)
         {
-            var res = await _mediator.Send(cmd, ct);
+            await _mediator.Send(new UpdateCourierCommand(id, request.Name, request.Email, request.PhoneNumber), ct);
             return NoContent();
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> DeleteCourier([FromBody] DeleteCourierCommand cmd, CancellationToken ct)
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> Delete(string id, CancellationToken ct)
         {
-            await _mediator.Send(cmd, ct);
+            await _mediator.Send(new DeleteCourierCommand(id), ct);
             return NoContent();
         }
 
-        [HttpGet("by/{phoneNumber}")]
-        public async Task<IActionResult> GetByPhoneNumber(string phoneNumber, CancellationToken ct)
+        [HttpGet("me")]
+        [Authorize(Roles = "Courier")]
+        [ProducesResponseType(typeof(CourierDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetMyProfile(CancellationToken ct)
         {
-            var res = await _mediator.Send(new FindCourierByPhoneNumberQuery { PhoneNumber = phoneNumber}, ct);
-            return Ok(res);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var courier = await _mediator.Send(new FindCourierByUserIdQuery(userId), ct);
+            if (courier is null)
+                return NotFound();
+
+            return Ok(courier);
         }
     }
+
+    public record UpdateCourierRequest(string Name, string Email, string PhoneNumber);
 }

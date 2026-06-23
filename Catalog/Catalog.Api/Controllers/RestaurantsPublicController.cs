@@ -38,5 +38,15 @@ namespace Catalog.Api.Controllers
             var result = await _service.GetMenuAsync(restaurantId, ct);
             return Ok(result);
         }
+
+        [HttpGet("by-cuisine/{cuisineId:int}")]
+        [ProducesResponseType(typeof(IEnumerable<RestaurantCardDto>), StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<RestaurantCardDto>>> GetByCuisine(
+            int cuisineId,
+            CancellationToken ct)
+        {
+            var result = await _service.GetByCuisineAsync(cuisineId, ct);
+            return Ok(result);
+        }
     }
 }

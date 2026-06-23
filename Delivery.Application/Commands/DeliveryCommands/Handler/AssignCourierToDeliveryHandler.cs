@@ -1,23 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Delivery.Application.DTOs;
 using Delivery.Application.Commands.DeliveryCommands.Command;
-using Delivery.Application.Interfaces.Commands;
+using Delivery.Application.Helpers;
 using Delivery.Domain.Interfaces.Services;
 using MediatR;
 
 namespace Delivery.Application.Commands.DeliveryCommands.Handler
 {
-    public class AssignCourierToDeliveryCommandHandler : ICommandHandler<AssignCourierToDeliveryCommand, Domain.Entities.Delivery>
+     public class AssignCourierToDeliveryCommandHandler : IRequestHandler<AssignCourierToDeliveryCommand, DeliveryDto>
     {
         private readonly IDeliveryService _service;
-        public AssignCourierToDeliveryCommandHandler(IDeliveryService service) { _service = service; }
 
-        public async Task<Domain.Entities.Delivery> Handle(AssignCourierToDeliveryCommand request, CancellationToken ct)
+        public AssignCourierToDeliveryCommandHandler(IDeliveryService service) => _service = service;
+
+        public async Task<DeliveryDto> Handle(AssignCourierToDeliveryCommand cmd, CancellationToken ct)
         {
-            return await _service.AssignCourierToDeliveryAsync(request.DeliveryId, request.CourierId, ct);
+            var delivery = await _service.AssignCourierToDeliveryAsync(cmd.DeliveryId, cmd.CourierId, ct);
+            return delivery.ToDto();
         }
     }
 }

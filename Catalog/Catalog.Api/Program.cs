@@ -72,6 +72,7 @@ builder.Services.AddScoped<IModifierGroupService, ModifierGroupService>();
 builder.Services.AddScoped<IRestaurantOwnerService, RestaurantOwnerService>();
 builder.Services.AddScoped<IRestaurantPublicService, RestaurantPublicService>();
 builder.Services.AddScoped<IWorkingHourService, WorkingHourService>();
+builder.Services.AddScoped<IRestaurantMenuService, RestaurantMenuService>();
 
 // ── AutoMapper ────────────────────────────────────────────────────────────────
 builder.Services.AddAutoMapper(typeof(CategoryProfile));

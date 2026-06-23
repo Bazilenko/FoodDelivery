@@ -1,4 +1,5 @@
 ﻿using Orders.Bll.DTOs.Order;
+using Bll.DTOs.Order;
 
 namespace Orders.Bll.Services.Interfaces
 {
@@ -16,5 +17,7 @@ namespace Orders.Bll.Services.Interfaces
             int orderId,
             int restaurantId,
             UpdateOrderStatusRequestDto dto);
+
+        Task<OrderSummaryDto?> GetOrderByIdForRestaurantAsync(int orderId, int restaurantId);
     }
 }

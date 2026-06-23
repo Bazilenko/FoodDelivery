@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Catalog.Api.Controllers
 {
     [ApiController]
-    [Route("catalog/modifier-groups/owner/{modifierGroupId:int}/options")]
+    [Route("catalog/owner/modifier-groups/{modifierGroupId:int}/options")]
     [Authorize(Roles = "RestaurantOwner")]
     [Produces("application/json")]
     public class DishOptionsController : ControllerBase
@@ -24,8 +24,12 @@ namespace Catalog.Api.Controllers
         [HttpGet("{id:int}")]
         [ProducesResponseType(typeof(DishOptionDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<DishOptionDto>> GetById(int id, CancellationToken ct)
-            => Ok(await _service.GetByIdAsync(id, ct));
+        {
+            var option = await _service.GetByIdAsync(id, ct);
+            return Ok(option);
+        }
 
         [HttpPost]
         [ProducesResponseType(typeof(DishOptionDto), StatusCodes.Status201Created)]
@@ -34,8 +38,7 @@ namespace Catalog.Api.Controllers
             int modifierGroupId, [FromBody] DishOptionCreateDto dto, CancellationToken ct)
         {
             var created = await _service.CreateAsync(modifierGroupId, dto, ct);
-            return CreatedAtAction(nameof(GetById),
-                new { modifierGroupId, id = created.Id }, created);
+            return Ok(created);
         }
 
         [HttpPut("{id:int}")]
@@ -47,7 +50,8 @@ namespace Catalog.Api.Controllers
             if (id != dto.Id)
                 return BadRequest("Route id does not match body id.");
 
-            return Ok(await _service.UpdateAsync(dto, ct));
+            var updated = await _service.UpdateAsync(dto, ct);
+            return Ok(updated);
         }
 
         /// <summary>Toggle option availability without a full update.</summary>

@@ -1,11 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Delivery.Application.Interfaces.Commands;
+﻿using MediatR;
 
-namespace Delivery.Application.Commands.CourierCommands.Commands
+namespace Delivery.Application.Commands.CourierCommands.Command
 {
-    public record UpdateCourierCommand(string Id, string Name, string Email, string PhoneNumber): ICommand;
+    public record UpdateCourierCommand(
+        string CourierId,
+        string Name,
+        string Email,
+        string PhoneNumber
+    ) : IRequest<Unit>;
 }

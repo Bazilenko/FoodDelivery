@@ -1,26 +1,59 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Delivery.Domain.Entities;
-using Delivery.Domain.Interfaces.Repositories;
+﻿using Delivery.Domain.Entities;
+using Delivery.Application.Interfaces.Repositories;
 using Delivery.Infrastructure.Mongo;
 using MongoDB.Driver;
 
 namespace Delivery.Infrastructure.Repository
 {
-    public class CourierRepository : MongoRepository<Courier>, ICourierRepository
+    public class CourierRepository : ICourierRepository
     {
-        public CourierRepository(MongoDbContext context, IClientSessionHandle? session = null) : base(context, session)
+        private readonly IMongoCollection<Courier> _collection;
+
+        public CourierRepository(MongoDbContext context)
         {
+            _collection = context.Couriers;
+        }
+
+        public async Task<Courier?> GetByIdAsync(string id, CancellationToken ct = default)
+        {
+            var filter = Builders<Courier>.Filter.Eq(c => c.Id, id);
+            return await _collection.Find(filter).FirstOrDefaultAsync(ct);
         }
 
         public async Task<Courier?> GetByPhoneNumberAsync(string phoneNumber, CancellationToken ct = default)
         {
             var filter = Builders<Courier>.Filter.Eq(c => c.PhoneNumber, phoneNumber);
             return await _collection.Find(filter).FirstOrDefaultAsync(ct);
+        }
+
+        public async Task<IEnumerable<Courier>> GetAllAsync(CancellationToken ct = default)
+        {
+            return await _collection.Find(_ => true).ToListAsync(ct);
+        }
+
+        public async Task<string> AddAsync(Courier courier, CancellationToken ct = default)
+        {
+            await _collection.InsertOneAsync(courier, cancellationToken: ct);
+            return courier.Id;
+        }
+
+        public async Task SaveAsync(Courier courier, CancellationToken ct = default)
+        {
+            var filter = Builders<Courier>.Filter.Eq(c => c.Id, courier.Id);
+            await _collection.ReplaceOneAsync(filter, courier, cancellationToken: ct);
+        }
+
+        public async Task DeleteAsync(string id, CancellationToken ct = default)
+        {
+            var filter = Builders<Courier>.Filter.Eq(c => c.Id, id);
+            await _collection.DeleteOneAsync(filter, ct);
+        }
+
+        public async Task<Courier?> FindByUserIdAsync(string userId, CancellationToken ct)
+        {
+            return await _collection
+                .Find(c => c.UserId == userId)
+                .FirstOrDefaultAsync(ct);
         }
     }
 }

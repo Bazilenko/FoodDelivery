@@ -2,5 +2,10 @@ using Catalog.Bll.DTOs.Category;
 
 namespace Catalog.Bll.DTOs.Dish
 {
-     public record CategoryWithDishesDto(CategoryDto Category, IEnumerable<DishCardDto> Dishes);
+     public class CategoryWithDishesDto
+     {
+          public CategoryDto Category { get; set; } = null!;
+
+          public IEnumerable<DishCardDto> Dishes { get; set; } = [];
+     }
 }

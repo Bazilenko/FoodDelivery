@@ -10,4 +10,5 @@ namespace Catalog.Bll.DTOs.ModifierGroup
         public int MaxSelect { get; set; }
         public IEnumerable<DishOptionDto> Options { get; set; } = [];
     }
+
 }

@@ -164,7 +164,7 @@ static async Task SeedAsync(WebApplication app)
     await db.Database.MigrateAsync();
 
     // Ensure default roles exist
-    string[] roles = ["User", "RestaurantOwner", "Admin"];
+    string[] roles = ["User", "RestaurantOwner", "Admin", "Courier"];
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))

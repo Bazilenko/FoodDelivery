@@ -3,6 +3,7 @@ using Orders.Dal.Entities;
 using Orders.Bll.DTOs.Order;
 using Orders.Bll.DTOs.OrderDish;
 using Orders.Bll.DTOs.OrderDishOption;
+using Orders.Shared.DTOs;
 
 namespace Orders.Bll.Mapper.Profiles
 {
@@ -27,6 +28,8 @@ namespace Orders.Bll.Mapper.Profiles
             CreateMap<OrderDishOption, OrderDishOptionResponseDto>();
 
             CreateMap<OrderStatusHistory, OrderStatusHistoryDto>();
+
+            CreateMap<Order, OrderSummaryDto>();
         }
     }
 }

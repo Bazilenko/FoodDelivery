@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using Delivery.Domain.Common;
 using Delivery.Domain.Exceptions;
 
@@ -13,7 +8,7 @@ namespace Delivery.Domain.Value_Objects
     {
         public decimal Amount { get; private set; }
         public string Currency { get ; private set; }
-        public Money(decimal amount, string currency)
+        public Money(decimal amount, string currency = "UAH")
         {
             if (amount < 0)
                 throw new InvalidMoneyException(amount);

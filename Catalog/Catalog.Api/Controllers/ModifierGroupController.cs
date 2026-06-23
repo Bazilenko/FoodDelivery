@@ -34,8 +34,7 @@ namespace Catalog.Api.Controllers
             int dishId, [FromBody] ModifierGroupCreateDto dto, CancellationToken ct)
         {
             var created = await _service.CreateAsync(dishId, dto, ct);
-            return CreatedAtAction(nameof(GetById),
-                new { dishId, id = created.Id }, created);
+            return Ok(created);
         }
 
         [HttpPut("{id:int}")]
@@ -47,7 +46,8 @@ namespace Catalog.Api.Controllers
             if (id != dto.Id)
                 return BadRequest("Route id does not match body id.");
 
-            return Ok(await _service.UpdateAsync(dto, ct));
+            var updated = await _service.UpdateAsync(dto, ct);
+            return Ok(updated);
         }
 
         [HttpDelete("{id:int}")]

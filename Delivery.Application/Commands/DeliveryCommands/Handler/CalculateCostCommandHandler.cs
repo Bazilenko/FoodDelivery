@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿
 using Delivery.Application.Commands.DeliveryCommands.Command;
 using Delivery.Application.Interfaces.Commands;
 using Delivery.Domain.Exceptions;
-using Delivery.Domain.Interfaces.Repositories;
+using Delivery.Application.Interfaces.Repositories;
 using MediatR;
 
 namespace Delivery.Application.Commands.DeliveryCommands.Handler

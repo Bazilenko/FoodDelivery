@@ -13,5 +13,6 @@ namespace Orders.Dal.Repository.Interfaces
         Task<int> GetOrdersCountAsync(int restaurantId, DateTime from, DateTime to);
         Task<IEnumerable<dynamic>> GetDailyRevenueAsync(int restaurantId, DateTime from, DateTime to);
         Task<IEnumerable<Entities.Order>> GetOrdersByRestaurantIdAsync(int restaurantId);
+        Task<Order?> GetOrderByIdForRestaurantAsync(int orderId, int restaurantId);
     }
 }

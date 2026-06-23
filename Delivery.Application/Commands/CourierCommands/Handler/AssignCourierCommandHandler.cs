@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Delivery.Application.Commands.CourierCommands.Commands;
+using Delivery.Application.Commands.CourierCommands.Command;
 using Delivery.Application.Interfaces.Commands;
 using Delivery.Domain.Interfaces.Repositories;
 using Delivery.Domain.Interfaces.Services;

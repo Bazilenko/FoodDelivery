@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Delivery.Domain.Common;
+﻿using Delivery.Domain.Common;
 using Delivery.Domain.Exceptions;
 
 namespace Delivery.Domain.Entities
@@ -15,17 +9,28 @@ namespace Delivery.Domain.Entities
         public string Email { get; private set; }
         public string PhoneNumber { get; private set; }
 
-        public Courier(string name ,string email, string phoneNumber) {
-            //if (string.IsNullOrWhiteSpace(email) ||
-            //    !Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
-            //    throw new DomainException("Invalid email", "InvalidEmail");
+        public string UserId { get; private set; }
 
-            //if (string.IsNullOrWhiteSpace(phoneNumber) || !Regex.IsMatch(phoneNumber, @"^\+?\d{10,15}$"))
-            //    throw new DomainException("Invalid phone number", "InvalidNumber");
+        private Courier() { }
+
+        public Courier(string name, string email, string phoneNumber, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new DomainException("Name cannot be empty.", "InvalidValue");
+
             Name = name;
             Email = email;
             PhoneNumber = phoneNumber;
+            UserId = userId;
+        }
 
+        public void Update(string name, string email, string phoneNumber)
+        {
+            Name = name;
+            Email = email;
+            PhoneNumber = phoneNumber;
+            Touch();
         }
     }
 }
+
