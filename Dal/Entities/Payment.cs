@@ -8,7 +8,7 @@ namespace Orders.Dal.Entities
     {
         public int OrderId { get; set; }
         public decimal Amount { get; set; }
-        public PaymentStatus Status { get; set; }
+        public PaymentStatus Status { get; set; } = PaymentStatus.Paid;
         public string PaymentMethod { get; set; } = string.Empty;  
 
         public string? TransactionId { get; set; }

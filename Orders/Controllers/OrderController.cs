@@ -140,10 +140,7 @@ namespace Orders.Api.Controllers
             try
             {
                 await _orderService.UpdateOrderStatusAsync(orderId, restaurantId, dto);
-
-                // Повертаємо оновлене замовлення
-                var updatedOrder = await _orderService.GetOrderByIdForRestaurantAsync(orderId, restaurantId);
-                return Ok(updatedOrder);
+                return NoContent();
             }
             catch (UnauthorizedAccessException ex)
             {

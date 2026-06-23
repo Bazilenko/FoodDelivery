@@ -191,4 +191,4 @@ public class RestaurantAnalyticsController : ControllerBase
         var result = await _service.GetPaymentSummaryAsync(new AnalyticsRequest(from, to), ct);
         return Ok(result);
     }
-}
+}   

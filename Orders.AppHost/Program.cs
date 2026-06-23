@@ -5,11 +5,6 @@ using Aspire.Hosting;
 var builder = DistributedApplication.CreateBuilder(args);
 
 
-
-var password = builder.AddParameter("msSql-password", "mssql123",secret: true);
-
-//var userMsSql = builder.AddParameter("sql-username", "mssql", secret: true);
-
 var sql = builder.AddSqlServer("mssql").WithDataVolume();
 
 var mongo = builder.AddMongoDB("mongo")
