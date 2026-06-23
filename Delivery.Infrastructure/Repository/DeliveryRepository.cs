@@ -1,67 +1,77 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Delivery.Application.Interfaces.Repositories;
 using Delivery.Domain.Enums;
-using Delivery.Domain.Interfaces.Repositories;
 using Delivery.Infrastructure.Mongo;
 using MongoDB.Driver;
 
 namespace Delivery.Infrastructure.Repository
 {
-    public class DeliveryRepository : MongoRepository<Domain.Entities.Delivery>, IDeliveryRepository
+    public class DeliveryRepository : IDeliveryRepository
     {
-        public DeliveryRepository(MongoDbContext context, IClientSessionHandle? session = null) : base(context, session)
+        private readonly IMongoCollection<Domain.Entities.Delivery> _collection;
+
+        public DeliveryRepository(MongoDbContext context)
         {
+            _collection = context.Deliveries;
         }
 
-        public async Task<int> GetActiveDeliveryCountByCourierAsync(string courierId, CancellationToken cancellationToken = default)
+        public async Task<Domain.Entities.Delivery?> GetByIdAsync(string id, CancellationToken ct = default)
         {
-            var filter = Builders<Domain.Entities.Delivery>.Filter.And(
-            Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Id, courierId),
-            Builders<Domain.Entities.Delivery>.Filter.Nin(d => d.Status, new[] { DeliveryStatus.Delivered, DeliveryStatus.Failed })
-        );
-            var count = await _collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
-            return (int)count;
+            var filter = Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Id, id);
+            return await _collection.Find(filter).FirstOrDefaultAsync(ct);
         }
 
-        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByCourierAndStatusAsync(string courierId, DeliveryStatus status, CancellationToken cancellationToken = default)
-        {
-            var filter = Builders<Domain.Entities.Delivery>.Filter.And(
-            Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Courier.Id, courierId),
-            Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Status, status)
-        );
-
-            return await _collection.Find(filter).ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByCourierIdAsync(string courierId, CancellationToken cancellationToken = default)
-        {
-            var filter = Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Courier.Id, courierId);
-            return await _collection.Find(filter).ToListAsync(cancellationToken);
-        }
-
-        public async Task<Domain.Entities.Delivery?> GetByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
+        public async Task<Domain.Entities.Delivery?> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
         {
             var filter = Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.OrderId, orderId);
-            return await _collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
+            return await _collection.Find(filter).FirstOrDefaultAsync(ct);
         }
 
-        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByStatusAsync(DeliveryStatus status, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByStatusAsync(DeliveryStatus status, CancellationToken ct = default)
         {
             var filter = Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Status, status);
-            return await _collection.Find(filter).ToListAsync(cancellationToken);
+            return await _collection.Find(filter).ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByTimeRangeAsync(DateTime start, DateTime end, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByCourierIdAsync(string courierId, CancellationToken ct = default)
+        {
+            var filter = Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Courier.Id, courierId);
+            return await _collection.Find(filter).ToListAsync(ct);
+        }
+
+        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByCourierAndStatusAsync(string courierId, DeliveryStatus status, CancellationToken ct = default)
         {
             var filter = Builders<Domain.Entities.Delivery>.Filter.And(
-            Builders<Domain.Entities.Delivery>.Filter.Gte(d => d.CreatedAt, start),
-            Builders<Domain.Entities.Delivery>.Filter.Lt(d => d.CreatedAt, end)
-        );
+                Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Courier.Id, courierId),
+                Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Status, status));
+            return await _collection.Find(filter).ToListAsync(ct);
+        }
 
-            return await _collection.Find(filter).ToListAsync(cancellationToken);
+        public async Task<int> GetActiveDeliveryCountByCourierAsync(string courierId, CancellationToken ct = default)
+        {
+            var filter = Builders<Domain.Entities.Delivery>.Filter.And(
+                Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Courier.Id, courierId),
+                Builders<Domain.Entities.Delivery>.Filter.Nin(d => d.Status, new[] { DeliveryStatus.Delivered, DeliveryStatus.Failed }));
+            return (int)await _collection.CountDocumentsAsync(filter, cancellationToken: ct);
+        }
+
+        public async Task<IEnumerable<Domain.Entities.Delivery>> GetByTimeRangeAsync(DateTime start, DateTime end, CancellationToken ct = default)
+        {
+            var filter = Builders<Domain.Entities.Delivery>.Filter.And(
+                Builders<Domain.Entities.Delivery>.Filter.Gte(d => d.CreatedAt, start),
+                Builders<Domain.Entities.Delivery>.Filter.Lt(d => d.CreatedAt, end));
+            return await _collection.Find(filter).ToListAsync(ct);
+        }
+
+        public async Task SaveAsync(Domain.Entities.Delivery delivery, CancellationToken ct = default)
+        {
+            var filter = Builders<Domain.Entities.Delivery>.Filter.Eq(d => d.Id, delivery.Id);
+            await _collection.ReplaceOneAsync(filter, delivery, cancellationToken: ct);
+        }
+
+        public async Task<string> AddAsync(Domain.Entities.Delivery delivery, CancellationToken ct = default)
+        {
+            await _collection.InsertOneAsync(delivery, cancellationToken: ct);
+            return delivery.Id;
         }
     }
 }
